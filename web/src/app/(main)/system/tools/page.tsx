@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/sheet";
 import { t } from "@/i18n";
 import { api } from "@/lib/api";
-import type { Agent, Tool, ToolRegistryRecord } from "@/lib/types";
+import type { Agent, Tool, ToolCollection, ToolRegistryRecord } from "@/lib/types";
 
 // Traffic tools are host tools gated by the global traffic capture switch: bindable, but
 // only usable when capture is on. Keep in sync with traffic.SeedToolMetas.
@@ -448,10 +448,17 @@ export default function ToolsPage() {
   const [customEdit, setCustomEdit] = React.useState<Tool | "new" | null>(null);
   const [selectedRegistry, setSelectedRegistry] = React.useState<ToolRegistryRecord | null>(null);
   const [registryCategory, setRegistryCategory] = React.useState("All");
+  const [collections, setCollections] = React.useState<ToolCollection[]>([]);
+  const [collectionName, setCollectionName] = React.useState("");
+  const [collectionDescription, setCollectionDescription] = React.useState("");
+  const [collectionToolIDs, setCollectionToolIDs] = React.useState<string[]>([]);
+  const [editingCollectionID, setEditingCollectionID] = React.useState<number | null>(null);
+  const [savingCollection, setSavingCollection] = React.useState(false);
 
   const reload = React.useCallback(() => {
     api.tools().then(setTools).catch(() => setTools([]));
     api.toolRegistry().then(setRegistryEntries).catch(() => setRegistryEntries([]));
+    api.toolCollections().then(setCollections).catch(() => setCollections([]));
   }, []);
   React.useEffect(() => {
     reload();
@@ -495,6 +502,55 @@ export default function ToolsPage() {
     return (!q || searchable.includes(q)) &&
       (registryCategory === "All" || externalToolCategory(entry) === registryCategory);
   });
+  const resetCollectionForm = () => {
+    setCollectionName("");
+    setCollectionDescription("");
+    setCollectionToolIDs([]);
+    setEditingCollectionID(null);
+  };
+
+  const editCollection = (collection: ToolCollection) => {
+    setCollectionName(collection.name);
+    setCollectionDescription(collection.description);
+    setCollectionToolIDs(collection.tool_ids ?? []);
+    setEditingCollectionID(collection.id);
+  };
+
+  const saveCollection = async () => {
+    if (!collectionName.trim()) {
+      toast.error(t("Collection name is required"));
+      return;
+    }
+    setSavingCollection(true);
+    try {
+      const body = {
+        name: collectionName.trim(),
+        description: collectionDescription.trim(),
+        tool_ids: collectionToolIDs,
+      };
+      if (editingCollectionID == null) await api.createToolCollection(body);
+      else await api.updateToolCollection(editingCollectionID, body);
+      toast.success(editingCollectionID == null ? t("Collection created") : t("Collection updated"));
+      resetCollectionForm();
+      api.toolCollections().then(setCollections).catch(() => setCollections([]));
+    } catch (e) {
+      toast.error(t("Collection save failed: {error}", { error: (e as Error).message }));
+    } finally {
+      setSavingCollection(false);
+    }
+  };
+
+  const deleteCollection = async (id: number) => {
+    try {
+      await api.deleteToolCollection(id);
+      setCollections((current) => current.filter((collection) => collection.id !== id));
+      if (editingCollectionID === id) resetCollectionForm();
+      toast.success(t("Collection deleted"));
+    } catch (e) {
+      toast.error(t("Collection delete failed: {error}", { error: (e as Error).message }));
+    }
+  };
+
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-6">
@@ -540,6 +596,7 @@ export default function ToolsPage() {
           <TabsTrigger value="system">{t("System tools")}</TabsTrigger>
           <TabsTrigger value="custom">{t("Custom tools")}</TabsTrigger>
           <TabsTrigger value="ecosystem">{t("External ecosystem")} ({registryEntries.filter((entry) => entry.source === "external").length})</TabsTrigger>
+          <TabsTrigger value="collections">{t("Collections")} ({collections.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="system">
@@ -638,6 +695,87 @@ export default function ToolsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="collections">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]">
+            <Card>
+              <CardHeader>
+                <CardTitle>{editingCollectionID == null ? t("Create a tool collection") : t("Edit tool collection")}</CardTitle>
+                <CardDescription>{t("Group registered tools for planning and organization. Membership does not install, enable or authorize execution.")}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-1.5">
+                  <Label>{t("Collection name")}</Label>
+                  <Input value={collectionName} onChange={(event) => setCollectionName(event.target.value)} placeholder={t("e.g. Web assessment")} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>{t("Description")}</Label>
+                  <Textarea value={collectionDescription} onChange={(event) => setCollectionDescription(event.target.value)} rows={3} placeholder={t("What is this collection for?")} />
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label>{t("Catalogue tools")}</Label>
+                    <span className="text-muted-foreground text-xs">{t("{count} selected", { count: collectionToolIDs.length })}</span>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto rounded-md border p-2">
+                    {registryEntries.length === 0 ? (
+                      <p className="text-muted-foreground p-3 text-sm">{t("No catalogue entries available.")}</p>
+                    ) : registryEntries.map((entry) => (
+                      <label key={entry.id} className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-muted/50">
+                        <Checkbox
+                          checked={collectionToolIDs.includes(entry.id)}
+                          onCheckedChange={(checked) => setCollectionToolIDs((current) =>
+                            checked === true
+                              ? (current.includes(entry.id) ? current : [...current, entry.id])
+                              : current.filter((id) => id !== entry.id)
+                          )}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">{entry.name}</span>
+                          <span className="text-muted-foreground block truncate font-mono text-[10px]">{entry.id}</span>
+                        </span>
+                        <Badge variant="outline" className="shrink-0 text-[10px]">{entry.source}</Badge>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={saveCollection} disabled={savingCollection || !collectionName.trim()}>
+                    <SaveIcon className="mr-2 size-4" />{savingCollection ? t("Saving...") : editingCollectionID == null ? t("Create collection") : t("Save changes")}
+                  </Button>
+                  {editingCollectionID != null && <Button variant="outline" onClick={resetCollectionForm}>{t("Cancel edit")}</Button>}
+                </div>
+                <p className="text-muted-foreground text-xs">{t("Collections are organizational only. They do not change a tool's enabled state, agent bindings, permissions or execution behavior.")}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("Saved collections")}</CardTitle>
+                <CardDescription>{t("Select a collection to edit it, or remove one you no longer need.")}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {collections.length === 0 ? (
+                  <p className="text-muted-foreground py-6 text-center text-sm">{t("No collections created yet.")}</p>
+                ) : collections.map((collection) => (
+                  <div key={collection.id} className="flex items-start justify-between gap-3 rounded-lg border p-3">
+                    <button type="button" className="min-w-0 flex-1 text-left" onClick={() => editCollection(collection)}>
+                      <span className="block truncate text-sm font-medium">{collection.name}</span>
+                      <span className="text-muted-foreground mt-1 block text-xs">{collection.description || t("No description")}</span>
+                      <span className="text-muted-foreground mt-2 block text-[11px]">{t("{count} tools", { count: collection.tool_ids?.length ?? 0 })}</span>
+                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button size="sm" variant="outline" onClick={() => editCollection(collection)}>{t("Edit")}</Button>
+                      <Button size="icon" variant="ghost" aria-label={t("Delete collection")} onClick={() => deleteCollection(collection.id)}>
+                        <Trash2Icon className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
       </Tabs>
 
       <Sheet open={!!selected} onOpenChange={(o) => !o && setSelectedKey(null)}>
