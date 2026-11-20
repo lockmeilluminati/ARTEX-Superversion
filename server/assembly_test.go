@@ -67,6 +67,27 @@ func TestAssembleVisibleSkill(t *testing.T) {
 	// before: skill not visible → no Skill meta-tool
 	extra, _, cleanup := agent.ToolAugment()(context.Background(), "planner")
 	cleanup()
+	// The same assembly pass must persist the capabilities evidenced by the
+	// common runtime toolset. This is a DB-backed assertion, not a mock profile.
+	profile, profileErr := pg.GetAgentCapabilityProfile("planner")
+	if profileErr != nil {
+		t.Fatalf("read persisted planner capability profile: %v", profileErr)
+	}
+	if profile == nil {
+		t.Fatal("expected agent assembly to persist a capability profile")
+	}
+	hasTerminal := false
+	for _, capability := range profile.Capabilities {
+		if capability == "terminal" {
+			hasTerminal = true
+		}
+	}
+	if !hasTerminal {
+		t.Fatalf("expected Bash-backed terminal capability, got %#v", profile.Capabilities)
+	}
+	if len(profile.Platforms) == 0 || len(profile.Evidence) == 0 {
+		t.Fatalf("expected platform and evidence metadata, got %#v", profile)
+	}
 	if hasSkillTool(extra) {
 		t.Fatalf("expected no Skill meta-tool before the skill is made visible")
 	}
