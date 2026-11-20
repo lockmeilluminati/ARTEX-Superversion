@@ -36,7 +36,7 @@ The `normalizer.Observation` type is an adapter-neutral contract. It is not itse
 | verification | enum | yes | not_assessed, unverified, verified, false_positive, blocked |
 | collection_status | enum | yes | unknown, not_tested, tested_positive, tested_negative, partial, failed |
 
-The Go validator currently requires the provenance and state fields, and validates evidence entries when supplied. Production adapter acceptance should require at least one evidence reference for scanner-originated observations; operator-authored facts may use a separately documented evidence policy.
+The Go validator requires provenance, explicit state fields and at least one raw evidence reference. Each evidence entry must include a kind and URI; optional digests support integrity checks. Adapters must retain the original output in ARTEX-managed evidence storage before submitting the normalized observation.
 
 ### Semantics that must not be collapsed
 
