@@ -509,7 +509,7 @@ export default function ToolsPage() {
         <TabsList>
           <TabsTrigger value="system">{t("System tools")}</TabsTrigger>
           <TabsTrigger value="custom">{t("Custom tools")}</TabsTrigger>
-          <TabsTrigger value="ecosystem">{t("External ecosystem")} ({registryEntries.length})</TabsTrigger>
+          <TabsTrigger value="ecosystem">{t("External ecosystem")} ({registryEntries.filter((entry) => entry.source === "external").length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="system">
