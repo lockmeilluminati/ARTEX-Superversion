@@ -11,15 +11,15 @@ import (
 // RegistryEntry stores descriptive metadata for a tool independently from the
 // legacy tools table. It does not define or grant an execution handler.
 type RegistryEntry struct {
-	ID        string          `json:"id"`
-	Name      string          `json:"name"`
-	Manifest  json.RawMessage `json:"manifest"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
-	ReviewStatus string       `json:"review_status"`
-	ReviewNote string         `json:"review_note"`
-	ReviewedBy string         `json:"reviewed_by"`
-	ReviewedAt *time.Time     `json:"reviewed_at,omitempty"`
+	ID           string          `json:"id"`
+	Name         string          `json:"name"`
+	Manifest     json.RawMessage `json:"manifest"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
+	ReviewStatus string          `json:"review_status"`
+	ReviewNote   string          `json:"review_note"`
+	ReviewedBy   string          `json:"reviewed_by"`
+	ReviewedAt   *time.Time      `json:"reviewed_at,omitempty"`
 }
 
 var ErrInvalidRegistryEntry = errors.New("registry entry requires an ID, name, and valid JSON manifest")
