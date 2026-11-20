@@ -34,7 +34,16 @@ This is a source-level baseline, not an end-to-end verification. It records what
 - IP validation rejects hostnames in the IP field. Domain normalization and URL normalization are performed in the asset store.
 - `server/assets.go` exposes `POST /api/assets`, processing a batch item by item. It returns per-item success IDs and per-item errors rather than failing the entire batch. Successful API inserts are tagged with source `api` and a task-level source note when a task ID is supplied.
 - `GET /api/assets` supports paging, type, company/task scoping and validated DSL search.
-- The managed-tool catalogue seeds `insert_assets` for the Auto and Pentest agents, but this baseline has not yet traced the full tool handler and every call site into the same asset-store path.
+- `agent/tools_insert.go` implements `insert_assets` and `SetAssetStore`. The handler derives task ID from runtime context (not model input), loads global and task asset-interception rules fail-closed, evaluates each item before writing, and calls the corresponding `AssetStore.Upsert*` method. It returns per-item results/errors, anchors successful assets to the owner exploration node, records task asset source (`agent`) and adds conservative auto-scope entries. Derived side-effect assets are not blindly auto-scoped.
+
+## Scanner-output parsers present in source
+
+- `agent/scan_ingest.go` and `agent/scan_ingest_tool.go` contain deterministic parsers for Nmap XML, Nuclei JSONL, httpx JSONL and ffuf JSON. The ingestion method accepts a file path under the run working directory, rejects path traversal/symlink escape and non-regular files, caps file size at 256 MiB, caps JSONL lines at 64 KiB and caps one file at 50,000 emitted assets/facts.
+- Nmap emits IP and service assets plus one host fact. httpx emits HTTP service assets plus one URL fact. ffuf emits service/URL assets plus one fact per result. Nuclei emits a target asset plus an explicitly unverified scanner-result fact; it does not create a confirmed vulnerability finding.
+- Parser inputs are typed and validated. Target-controlled text (banners, titles, template names, extracted values) is retained only as inert quoted fact detail; URL userinfo is stripped. Malformed lines are counted/skipped; truncated files preserve complete records and report truncation.
+- Scanner assets flow through `insert_assets`; scanner facts flow through `recordScanFacts`, which deduplicates by source + summary + detail within the task exploration graph. Asset upserts provide the asset-level idempotence. The source contains parser and tool-constructor tests, including PostgreSQL-backed ingestion tests, but these tests have not been run in this work session.
+- `agent/bbot_ingest.go` and `agent/bbot_ingest_tool.go` contain a typed BBot JSONL parser. Only `scope_distance == 0` events may create assets through `insert_assets`; other or missing scope distances become `third_party_intel` facts and never auto-enter task scope. Only typed fields drive routing; free text is inert quoted detail. Oversized and malformed lines are counted.
+- These parser implementations are confirmed in source. Their full runtime exposure/agent binding and the end-to-end command → output file → parser invocation chain still need verification before calling the scanner ingestion path operational.
 
 ## Current classification
 
@@ -46,10 +55,10 @@ This is a source-level baseline, not an end-to-end verification. It records what
 | General exploration fact persistence | Implemented | `record_fact`; not yet a normalized observation ledger |
 | Finding persistence and evidence linkage | Implemented | `report_finding`, `db/findings.go` |
 | Asset upsert and API persistence | Implemented | `db/assets.go`, `server/assets.go` |
-| Full `insert_assets` handler-to-store lineage | Partial / not yet traced | Tool is seeded for Auto/Pentest; handler implementation and all producers still need a focused trace |
+| `insert_assets` handler-to-store lineage | Implemented | `agent/tools_insert.go` → asset interception → typed `AssetStore.Upsert*` → task provenance/auto-scope |
 | External scanner binary detection and execution | Not established | Registry profiles are metadata-only; README toolchain references do not prove local installation or invocation |
-| Scanner-specific output parsers and normalized ingestion | Not established | No complete parser inventory or end-to-end fixture chain has been verified in this baseline |
-| Asset/finding UI visibility from a real scanner run | Not yet traced | API routes are confirmed; end-to-end frontend data flow and refresh behavior still need inspection |
+| Scanner-specific output parsers | Implemented in source; runtime exposure pending | Nmap XML, Nuclei JSONL, httpx JSONL, ffuf JSON and BBot JSONL parsers exist; callable binding and end-to-end operation still need confirmation |
+| Asset/finding UI visibility | Implemented at API/UI level; run-to-view refresh partial | Assets page reads `/api/assets` and has explicit manual refresh; findings flat/group views refresh periodically, while asset-tree view is loaded on entry/filter change. A scanner run is not yet proven to trigger an asset-page refresh automatically |
 | Raw output/evidence pointer attached to every normalized asset observation | Not established | Existing facts/findings can hold evidence text; canonical raw-evidence lineage is still a design gap |
 
 ## Gaps to close next
