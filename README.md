@@ -66,7 +66,6 @@ The roadmap is deliberately staged. We will build a dependable foundation before
 - [ ] Define a common tool manifest: name, description, source, version, license, maintainer, dependencies, platforms, install method, capabilities, and permissions.
 - [ ] Add a searchable registry for installed, available, deprecated, and quarantined tools.
 - [ ] Track provenance: canonical repository, original uploader/maintainer, first-seen date, release dates, commit ancestry, and verification confidence.
-- [ ] Track repository lifecycle events: renamed, transferred, archived, made private, deleted, or restored where observable.
 - [ ] Preserve source snapshots and metadata where legally and technically possible.
 
 ### Phase 3 — Yakit integration
@@ -105,7 +104,7 @@ The roadmap is deliberately staged. We will build a dependable foundation before
 
 ### Phase 7 — Hardening & release
 
-- [ ] Add end-to-end tests for integrations and tool lifecycle events.
+- [ ] Add end-to-end tests for integration health, approved execution, and result ingestion.
 - [ ] Publish reproducible builds, dependency inventories, and release notes.
 - [ ] Define support policies for tool versions and platform compatibility.
 - [ ] Complete security review before enabling higher-autonomy workflows.
