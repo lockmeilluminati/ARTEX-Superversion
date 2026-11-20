@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { PlayIcon, PlusIcon, RotateCcwIcon, SaveIcon, SearchIcon, Trash2Icon } from "lucide-react";
+import { ActivityIcon, ArrowUpRightIcon, BoxesIcon, GlobeIcon, NetworkIcon, PlayIcon, PlusIcon, RadarIcon, RotateCcwIcon, SaveIcon, SearchIcon, ShieldCheckIcon, TerminalSquareIcon, Trash2Icon, WorkflowIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -320,55 +320,68 @@ function ToolEditor({
   );
 }
 
-// ToolGridCard is one clickable tile in the catalog grid.
+// ToolGridCard presents each registered tool as a marketplace-style visual tile.
 function ToolGridCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
+  const key = tool.key.toLowerCase();
+  const Icon = /http|web|url|browser|request/.test(key)
+    ? GlobeIcon
+    : /scan|nmap|nuclei|discover|recon/.test(key)
+      ? RadarIcon
+      : /traffic|proxy|network|packet/.test(key)
+        ? NetworkIcon
+        : /agent|workflow|plan|task/.test(key)
+          ? WorkflowIcon
+          : /shell|command|script|terminal/.test(key)
+            ? TerminalSquareIcon
+            : /evidence|finding|security|guard/.test(key)
+              ? ShieldCheckIcon
+              : /asset|tool|registry|list/.test(key)
+                ? BoxesIcon
+                : ActivityIcon;
+  const specialty = tool.description?.trim() || "A connected capability in the ARTEX tool ecosystem.";
   return (
     <button
       type="button"
       onClick={onClick}
-      className="hover:border-primary/50 hover:bg-muted/40 focus-visible:ring-ring flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      className="group flex min-h-[260px] flex-col overflow-hidden rounded-xl border border-border/70 bg-card text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-xl hover:shadow-sky-950/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-sm font-medium">{tool.key}</span>
-        {tool.system ? (
-          <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-            {t("System")}
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
-            {t("Custom · {kind}", { kind: tool.kind ?? "" })}
-          </Badge>
-        )}
-        {tool.deferred && (
-          <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
-            {t("deferred")}
-          </Badge>
-        )}
-        {!tool.enabled && (
-          <Badge variant="outline" className="text-destructive px-1.5 py-0 text-[10px]">
-            {t("Disabled")}
-          </Badge>
-        )}
-        <Badge
-          variant="secondary"
-          className="ml-auto px-1.5 py-0 text-[10px] tabular-nums"
-          title={t("{count} calls in total", { count: tool.calls ?? 0 })}
-        >
-          {t("{count} calls", { count: tool.calls ?? 0 })}
-        </Badge>
+      <div className="relative flex h-32 items-center justify-between overflow-hidden border-b border-white/10 bg-[radial-gradient(ellipse_at_75%_20%,rgba(14,165,233,0.25),transparent_48%),linear-gradient(135deg,#07111f,#101d32_55%,#111827)] px-5">
+        <div className="absolute -right-5 -top-12 size-44 rounded-full border border-sky-300/15" />
+        <div className="absolute -right-1 -top-6 size-32 rounded-full border border-sky-300/10" />
+        <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
+        <div className="relative grid size-16 place-items-center rounded-2xl border border-sky-300/25 bg-sky-400/10 text-sky-200 shadow-lg shadow-sky-950/30">
+          <Icon className="size-8" strokeWidth={1.5} />
+        </div>
+        <div className="relative flex flex-col items-end gap-2">
+          <span className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-sky-100/80">
+            {tool.system ? "Native capability" : "Extension"}
+          </span>
+          <span className="font-mono text-[10px] text-slate-400">ARTEX / TOOL</span>
+        </div>
       </div>
-      <p className="text-muted-foreground line-clamp-1 h-4 text-xs">
-        {tool.description || t("(no description)")}
-      </p>
-      <div className="mt-auto flex flex-wrap gap-1 pt-1">
-        {tool.agents.length === 0 && (
-          <span className="text-muted-foreground text-[10px]">{t("(no agents bound)")}</span>
-        )}
-        {tool.agents.map((a) => (
-          <Badge key={a} variant="outline" className="px-1.5 py-0 text-[10px]">
-            {a}
-          </Badge>
-        ))}
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold tracking-tight group-hover:text-sky-500">{tool.key}</h3>
+            <p className="mt-1 line-clamp-2 min-h-9 text-xs leading-relaxed text-muted-foreground">{specialty}</p>
+          </div>
+          <ArrowUpRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-sky-500" />
+        </div>
+        <div className="mt-auto flex flex-wrap items-center gap-1.5">
+          {tool.agents.slice(0, 3).map((agent) => (
+            <Badge key={agent} variant="outline" className="px-2 py-0.5 text-[10px]">{agent}</Badge>
+          ))}
+          {tool.agents.length > 3 && <Badge variant="outline" className="px-2 py-0.5 text-[10px]">+{tool.agents.length - 3}</Badge>}
+          {tool.agents.length === 0 && <span className="text-[10px] text-muted-foreground">No agent assigned</span>}
+        </div>
+        <div className="flex items-center justify-between border-t pt-3">
+          <div className="flex items-center gap-2">
+            <span className={tool.enabled ? "size-1.5 rounded-full bg-emerald-500" : "size-1.5 rounded-full bg-muted-foreground"} />
+            <span className="text-[10px] text-muted-foreground">{tool.enabled ? "Enabled" : "Disabled"}</span>
+            {tool.deferred && <Badge variant="outline" className="px-1.5 py-0 text-[9px]">Deferred</Badge>}
+          </div>
+          <span className="text-[10px] tabular-nums text-muted-foreground">{tool.calls ?? 0} calls</span>
+        </div>
       </div>
     </button>
   );
@@ -411,11 +424,44 @@ export default function ToolsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">{t("Tools")}</h1>
-          <p className="text-muted-foreground text-sm">{t("Descriptions/bindings for system tools, plus custom tools (command/script/http)")}</p>
+      <div className="relative overflow-hidden rounded-2xl border border-sky-500/20 bg-[radial-gradient(ellipse_at_85%_0%,rgba(14,165,233,0.18),transparent_45%),linear-gradient(120deg,#07111f,#111c2d_65%,#101827)] p-6 text-white shadow-lg">
+        <div className="absolute -right-10 -top-24 size-72 rounded-full border border-sky-300/10" />
+        <div className="absolute -right-1 -top-16 size-52 rounded-full border border-sky-300/10" />
+        <div className="relative flex flex-wrap items-end justify-between gap-5">
+          <div className="max-w-2xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-300/20 bg-sky-300/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-200">
+              <BoxesIcon className="size-3.5" /> Tool intelligence library · draft
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Discover your security toolkit.</h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">Explore capabilities, compare specialties and assemble the right toolset. Documentation is here when you need it — discovery comes first.</p>
+          </div>
+          <div className="relative w-full sm:w-72">
+            <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              className="h-10 border-white/15 bg-white/10 pl-9 text-sm text-white placeholder:text-slate-400 focus-visible:ring-sky-400"
+              placeholder="Search tools and specialties…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
         </div>
+        <div className="relative mt-6 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/10 pt-4 text-xs text-slate-300">
+          <span><b className="mr-1.5 text-white">{tools.length}</b> registered capabilities</span>
+          <span><b className="mr-1.5 text-white">{tools.filter((tool) => tool.enabled).length}</b> enabled</span>
+          <span><b className="mr-1.5 text-white">{tools.filter((tool) => tool.system).length}</b> native tools</span>
+          <span><b className="mr-1.5 text-white">{tools.filter((tool) => !tool.system).length}</b> extensions</span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">Browse the ecosystem</h2>
+          <p className="text-muted-foreground text-xs">Select a card to inspect configuration and agent bindings.</p>
+        </div>
+        <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]"><ActivityIcon className="size-3.5" /> Live catalogue data</div>
+      </div>
+
+      <div className="hidden">
         <div className="relative w-64">
           <SearchIcon className="text-muted-foreground absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2" />
           <Input
@@ -425,6 +471,7 @@ export default function ToolsPage() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+      </div>
       </div>
 
       <Tabs defaultValue="system">
@@ -454,7 +501,7 @@ export default function ToolsPage() {
                   {query.trim() ? t("No matching system tools") : t("(no system tools yet, waiting for the backend seed)")}
                 </p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {systemTools.map((t) => (
                     <ToolGridCard key={t.key} tool={t} onClick={() => openTool(t)} />
                   ))}
