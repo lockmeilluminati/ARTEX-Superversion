@@ -28,8 +28,8 @@ Shell-kind custom tools are represented as declarations, not executable adapters
 
 1. Project MCP server tools and skills into the same manifest vocabulary without pretending they
    are rows in the tools table.
-2. Add a read-only registry view/API backed by `db.ListTools` and live MCP/skill observations.
-3. Add persistence only after the metadata schema and migration semantics are reviewed.
+2. Add a read-only registry view/API backed by legacy tool rows, external metadata, and live MCP/skill observations.
+3. Add source-backed lifecycle updates and explicit operator review for new external entries.
 4. Keep execution in existing ARTEX handlers and pass all operations through existing scope,
    permission, approval, egress and evidence controls.
 
