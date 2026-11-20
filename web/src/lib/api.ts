@@ -1253,6 +1253,8 @@ export const api = {
   // ---- tools (built-in tool catalog) ----
   tools: () => get<{ tools: Tool[] }>("/tools").then((r) => arr(r.tools)),
   toolRegistry: () => get<{ entries: ToolRegistryRecord[] }>("/tool-registry").then((r) => arr(r.entries)),
+  toolRegistryReview: (id: string, body: { status: "pending" | "approved" | "rejected"; note: string }) => post<{ ok: boolean; review_status: string }>(`/tool-registry/${encodeURIComponent(id)}/review`, body),
+  toolRegistryReviews: (id: string) => get<{ reviews: ToolRegistryReview[] }>(`/tool-registry/${encodeURIComponent(id)}/reviews`).then((r) => arr(r.reviews)),
   toolCollections: () => get<{ collections: ToolCollection[] }>("/tool-collections").then((r) => arr(r.collections)),
   createToolCollection: (body: Pick<ToolCollection, "name" | "description" | "tool_ids">) =>
     post<{ id: number }>("/tool-collections", body),
