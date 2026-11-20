@@ -98,6 +98,7 @@ import type {
   TokenTotal,
   TokenUsage,
   Tool,
+  ToolCollection,
   ToolRegistryRecord,
   ToolStat,
   TrafficDetail,
