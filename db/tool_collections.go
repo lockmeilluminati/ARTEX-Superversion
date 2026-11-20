@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// ToolCollection is an operator-defined grouping of catalogue IDs. It has no
-// effect on tool installation, enablement, permissions, or execution.
+// ToolCollection groups catalogue IDs for operator organization only. It does
+// not install, enable, authorize, or execute any tool.
 type ToolCollection struct {
 	ID          int64     `json:"id"`
 	Name        string    `json:"name"`
@@ -34,10 +34,8 @@ func (d *DB) CreateToolCollection(name, description string, toolIDs []string) (i
 	}
 	defer tx.Rollback()
 	var id int64
-	if err := tx.QueryRow(
-		`INSERT INTO tool_collections (name, description) VALUES ($1, $2) RETURNING id`,
-		name, strings.TrimSpace(description),
-	).Scan(&id); err != nil {
+	if err := tx.QueryRow(`INSERT INTO tool_collections (name, description) VALUES ($1, $2) RETURNING id`,
+		name, strings.TrimSpace(description)).Scan(&id); err != nil {
 		return 0, err
 	}
 	if err := replaceToolCollectionItemsTx(tx, id, toolIDs); err != nil {
@@ -84,7 +82,12 @@ func (d *DB) UpdateToolCollection(id int64, name, description string, toolIDs []
 	if id <= 0 || name == "" {
 		return ErrInvalidToolCollection
 	}
-	result, err := d.Exec(`UPDATE tool_collections SET name=$2, description=$3, updated_at=now() WHERE id=$1`,
+	tx, err := d.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec(`UPDATE tool_collections SET name=$2, description=$3, updated_at=now() WHERE id=$1`,
 		id, name, strings.TrimSpace(description))
 	if err != nil {
 		return err
@@ -96,7 +99,10 @@ func (d *DB) UpdateToolCollection(id int64, name, description string, toolIDs []
 	if n == 0 {
 		return errors.New("tool collection not found")
 	}
-	return d.ReplaceToolCollectionItems(id, toolIDs)
+	if err := replaceToolCollectionItemsTx(tx, id, toolIDs); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (d *DB) ReplaceToolCollectionItems(id int64, toolIDs []string) error {
@@ -106,7 +112,19 @@ func (d *DB) ReplaceToolCollectionItems(id int64, toolIDs []string) error {
 	if id <= 0 {
 		return ErrInvalidToolCollection
 	}
-	if _, err := d.Exec(`DELETE FROM tool_collection_items WHERE collection_id=$1`, id); err != nil {
+	tx, err := d.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := replaceToolCollectionItemsTx(tx, id, toolIDs); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func replaceToolCollectionItemsTx(tx *sql.Tx, id int64, toolIDs []string) error {
+	if _, err := tx.Exec(`DELETE FROM tool_collection_items WHERE collection_id=$1`, id); err != nil {
 		return err
 	}
 	seen := make(map[string]struct{}, len(toolIDs))
@@ -119,7 +137,7 @@ func (d *DB) ReplaceToolCollectionItems(id int64, toolIDs []string) error {
 			continue
 		}
 		seen[toolID] = struct{}{}
-		if _, err := d.Exec(`INSERT INTO tool_collection_items (collection_id, tool_id, position) VALUES ($1,$2,$3)`,
+		if _, err := tx.Exec(`INSERT INTO tool_collection_items (collection_id, tool_id, position) VALUES ($1,$2,$3)`,
 			id, toolID, position); err != nil {
 			return err
 		}
