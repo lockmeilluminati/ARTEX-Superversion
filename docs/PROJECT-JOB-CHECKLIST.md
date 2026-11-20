@@ -29,7 +29,7 @@ Last reviewed: 2026-11-20
 - [x] Add external tool profile sheets with lifecycle, availability, trust, license, maintainer, specialties, permissions and source details.
 - [x] Add category filtering with categories derived dynamically from registered external entries. Commit: c52d1c8c9adbe3e42f935ec69bbf960cbeb36ba9.
 - [~] Add individual tool artwork. Current cards use generic CSS artwork; add only verified tool logos/images and a safe fallback.
-- [ ] Add marketplace sorting and comparison views (capabilities, platforms, license, trust and readiness).
+- [x] Add marketplace sorting and side-by-side comparison (name, verification, trust, lifecycle, license; capabilities, platforms, license, trust, readiness and availability). Commits: a46f8919c7e355edd6e93c8ae3b86b2873cb38da and bd4ab5e4a56c5059acc6693de931519b83ce2b08.
 - [ ] Expand the verified catalogue with relevant tools such as Nmap, Nuclei, httpx, Katana, ffuf and Dalfox. Verify each record's source, license, capabilities and integration status before marking it verified.
 - [ ] Add a clear operator workflow for reviewing and promoting candidate registry entries.
 
