@@ -62,6 +62,7 @@ type Manifest struct {
 	LegacyKey string `json:"legacy_key,omitempty"`
 	Name string `json:"name"`
 	Description string `json:"description,omitempty"`
+	Category string `json:"category,omitempty"`
 	Version string `json:"version,omitempty"`
 	License string `json:"license,omitempty"`
 	Maintainer string `json:"maintainer,omitempty"`
