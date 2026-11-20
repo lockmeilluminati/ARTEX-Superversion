@@ -17,7 +17,7 @@ they must not create a second execution engine or bypass existing controls.
 | `integrations` | Adapter identity, health and future operation contracts | Initial contract + health probe |
 | `integrations/yakit` | Yakit connector boundary | Health adapter; upstream interface pending verification |
 | `integrations/kali` | Kali tool discovery boundary | Fixed allowlist version discovery |
-| `toolregistry` | Versioned manifest and lifecycle registry | In-memory scaffold |
+| `toolregistry` | Unified manifest, lifecycle registry, and read-only importer for existing `tools` rows | In-memory registry + DB projection; not yet wired into server/API |
 | `provenance` | Repository identity, ownership, release and lifecycle evidence | Data contracts + verifier interface |
 | `discovery` | Pluggable candidate discovery and human review | Provider/review contracts |
 | `tooldocs` | Source-backed generated documentation drafts | Profile contract + draft placeholder |
@@ -73,3 +73,17 @@ citation-backed documentation source contracts, VEQ graph indexing boundaries, c
 execution-profile validation, Kali package-to-upstream mapping metadata, and a Yakit result/traffic
 envelope. These remain interfaces and data models until source formats and runtime ownership are
 verified.
+
+
+## Unified tool catalogue implementation status
+
+The first compatibility slice is now implemented in `toolregistry`:
+
+- `FromDBTool` / `ImportDBTools` project existing native and custom tool rows into stable namespaced manifests.
+- `LoadFromDB` builds an in-memory read-only registry from `db.ListTools()`.
+- `legacy_key` preserves the existing runtime key; native handlers and custom executors are not rewritten.
+- Native code-defined tools and operator-configured custom tools receive distinct source/trust classifications.
+- Shell-kind custom tools are represented as environment declarations, not standalone executors.
+- Approval remains explicitly required in the projected metadata.
+
+This slice does not yet catalogue live MCP tools, skills, Kali packages or Yakit capabilities, and it is not yet connected to an HTTP endpoint or agent runtime. It does not change execution behavior.
