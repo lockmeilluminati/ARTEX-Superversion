@@ -50,6 +50,6 @@ func FromDBTool(row *db.Tool) Manifest {
 		AgentBindings: append([]string(nil), row.Agents...),
 		ExecutionKind: executionKind, InputSchema: schema, Enabled: row.Enabled,
 		Availability: AvailabilityRegistered, Trust: trust,
-		ApprovalRequired: true, Lifecycle: LifecycleAvailable, Verified: row.System,
+		ApprovalRequired: true, Lifecycle: LifecycleAvailable, Verified: false,
 	}
 }
