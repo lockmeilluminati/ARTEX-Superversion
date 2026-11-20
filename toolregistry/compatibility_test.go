@@ -45,8 +45,8 @@ func TestMatchAgentChecksPlatformAndExplicitRequirements(t *testing.T) {
 		Capabilities: []AgentCapability{CapabilityAPI, CapabilityBrowser},
 		Platforms: []string{"Windows"},
 	}, tool)
-	if got.Status != CompatibilityIncompatible {
-		t.Fatalf("platform mismatch should be incompatible: %#v", got)
+	if got.Status != CompatibilityIncompatible || len(got.MissingPlatforms) != 1 || got.MissingPlatforms[0] != "linux" {
+		t.Fatalf("platform mismatch should be reported separately: %#v", got)
 	}
 	got = MatchAgent(AgentProfile{
 		ID: "linux-agent",
