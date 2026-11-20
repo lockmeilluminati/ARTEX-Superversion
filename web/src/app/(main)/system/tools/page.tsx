@@ -416,6 +416,7 @@ function RegistryGridCard({ entry, onSelect }: { entry: ToolRegistryRecord; onSe
         </div>
         <div className="mt-auto flex flex-wrap gap-1.5 border-t pt-3">
           <Badge variant="secondary" className="text-[10px]">{m.lifecycle || "candidate"}</Badge>
+          <Badge variant="outline" className="text-[10px]">Review: {entry.review_status || "pending"}</Badge>
           <Badge variant="outline" className="text-[10px]">Trust: {m.trust || "unknown"}</Badge>
           <Badge variant="outline" className="text-[10px]">{m.availability || "unknown"}</Badge>
           {m.approval_required && <Badge variant="outline" className="text-[10px]">Approval required</Badge>}
@@ -479,7 +480,7 @@ export default function ToolsPage() {
     }
     setReviewNote(selectedRegistry.review_note ?? "");
     api.toolRegistryReviews(selectedRegistry.id).then(setReviewHistory).catch(() => setReviewHistory([]));
-  }, [selectedRegistry?.id]);
+  }, [selectedRegistry]);
 
   async function saveRegistryReview(status: "pending" | "approved" | "rejected") {
     if (!selectedRegistry) return;
