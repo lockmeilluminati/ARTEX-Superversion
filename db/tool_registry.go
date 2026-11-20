@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -15,6 +16,10 @@ type RegistryEntry struct {
 	Manifest  json.RawMessage `json:"manifest"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
+	ReviewStatus string       `json:"review_status"`
+	ReviewNote string         `json:"review_note"`
+	ReviewedBy string         `json:"reviewed_by"`
+	ReviewedAt *time.Time     `json:"reviewed_at,omitempty"`
 }
 
 var ErrInvalidRegistryEntry = errors.New("registry entry requires an ID, name, and valid JSON manifest")
@@ -42,7 +47,7 @@ func (d *DB) ListRegistryEntries() ([]RegistryEntry, error) {
 	if d == nil || d.DB == nil {
 		return nil, errors.New("database is required")
 	}
-	rows, err := d.Query(`SELECT id, name, manifest, created_at, updated_at FROM tool_registry ORDER BY id`)
+	rows, err := d.Query(`SELECT id, name, manifest, created_at, updated_at, review_status, review_note, reviewed_by, reviewed_at FROM tool_registry ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +55,12 @@ func (d *DB) ListRegistryEntries() ([]RegistryEntry, error) {
 	var entries []RegistryEntry
 	for rows.Next() {
 		var entry RegistryEntry
-		if err := rows.Scan(&entry.ID, &entry.Name, &entry.Manifest, &entry.CreatedAt, &entry.UpdatedAt); err != nil {
+		var reviewedAt sql.NullTime
+		if err := rows.Scan(&entry.ID, &entry.Name, &entry.Manifest, &entry.CreatedAt, &entry.UpdatedAt, &entry.ReviewStatus, &entry.ReviewNote, &entry.ReviewedBy, &reviewedAt); err != nil {
 			return nil, err
+		}
+		if reviewedAt.Valid {
+			entry.ReviewedAt = &reviewedAt.Time
 		}
 		entries = append(entries, entry)
 	}
