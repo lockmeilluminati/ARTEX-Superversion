@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/sheet";
 import { t } from "@/i18n";
 import { api } from "@/lib/api";
-import type { Agent, Tool } from "@/lib/types";
+import type { Agent, Tool, ToolRegistryRecord } from "@/lib/types";
 
 // Traffic tools are host tools gated by the global traffic capture switch: bindable, but
 // only usable when capture is on. Keep in sync with traffic.SeedToolMetas.
@@ -387,8 +387,50 @@ function ToolGridCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
   );
 }
 
+function RegistryGridCard({ entry }: { entry: ToolRegistryRecord }) {
+  const m = entry.manifest;
+  const source = m.canonical_repository || m.sources?.[0]?.url;
+  return (
+    <article className="group flex min-h-[290px] flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-xl hover:shadow-sky-950/10">
+      <div className="relative flex h-32 items-center justify-between overflow-hidden border-b border-white/10 bg-[radial-gradient(ellipse_at_75%_20%,rgba(14,165,233,0.25),transparent_48%),linear-gradient(135deg,#07111f,#101d32_55%,#111827)] px-5">
+        <div className="absolute -right-5 -top-12 size-44 rounded-full border border-sky-300/15" />
+        <div className="absolute -right-1 -top-6 size-32 rounded-full border border-sky-300/10" />
+        <div className="relative grid size-16 place-items-center rounded-2xl border border-sky-300/25 bg-sky-400/10 text-sky-200">
+          <GlobeIcon className="size-8" strokeWidth={1.5} />
+        </div>
+        <div className="relative flex flex-col items-end gap-2">
+          <span className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-sky-100/80">External registry</span>
+          <span className="font-mono text-[10px] text-slate-400">{m.execution_kind || "external"}</span>
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div>
+          <h3 className="text-sm font-semibold tracking-tight">{entry.name}</h3>
+          <p className="mt-1 line-clamp-3 min-h-12 text-xs leading-relaxed text-muted-foreground">{m.description || "Registered external tool. Capability details are awaiting verification."}</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {(m.capabilities ?? []).slice(0, 4).map((capability) => (
+            <Badge key={capability} variant="outline" className="px-2 py-0.5 text-[10px]">{capability.replaceAll("_", " ")}</Badge>
+          ))}
+        </div>
+        <div className="mt-auto flex flex-wrap gap-1.5 border-t pt-3">
+          <Badge variant="secondary" className="text-[10px]">{m.lifecycle || "candidate"}</Badge>
+          <Badge variant="outline" className="text-[10px]">Trust: {m.trust || "unknown"}</Badge>
+          <Badge variant="outline" className="text-[10px]">{m.availability || "unknown"}</Badge>
+          {m.approval_required && <Badge variant="outline" className="text-[10px]">Approval required</Badge>}
+        </div>
+        <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+          <span className="truncate">{[m.license, m.version].filter(Boolean).join(" · ") || "License/version not verified"}</span>
+          {source ? <a href={source} target="_blank" rel="noreferrer" className="shrink-0 text-sky-500 hover:underline">Source ↗</a> : <span>Source pending</span>}
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function ToolsPage() {
   const [tools, setTools] = React.useState<Tool[]>([]);
+  const [registryEntries, setRegistryEntries] = React.useState<ToolRegistryRecord[]>([]);
   const [agents, setAgents] = React.useState<Agent[]>([]);
   const [captureOn, setCaptureOn] = React.useState(false);
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
@@ -396,6 +438,7 @@ export default function ToolsPage() {
 
   const reload = React.useCallback(() => {
     api.tools().then(setTools).catch(() => setTools([]));
+    api.toolRegistry().then(setRegistryEntries).catch(() => setRegistryEntries([]));
   }, []);
   React.useEffect(() => {
     reload();
@@ -465,6 +508,7 @@ export default function ToolsPage() {
         <TabsList>
           <TabsTrigger value="system">{t("System tools")}</TabsTrigger>
           <TabsTrigger value="custom">{t("Custom tools")}</TabsTrigger>
+          <TabsTrigger value="ecosystem">{t("External ecosystem")} ({registryEntries.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="system">
@@ -531,6 +575,36 @@ export default function ToolsPage() {
                   {customTools.map((t) => (
                     <ToolGridCard key={t.key} tool={t} onClick={() => openTool(t)} />
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ecosystem">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("External tool ecosystem")}</CardTitle>
+              <CardDescription>
+                {t("Curated external tools from the unified registry. Registration is descriptive only; it does not install, enable or execute a tool.")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {registryEntries.filter((entry) => {
+                const q = query.trim().toLowerCase();
+                return !q || entry.name.toLowerCase().includes(q) ||
+                  entry.manifest.description?.toLowerCase().includes(q) ||
+                  (entry.manifest.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
+              }).length === 0 ? (
+                <p className="text-muted-foreground py-6 text-center text-sm">{t("No registered external tools match this search.")}</p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  {registryEntries.filter((entry) => {
+                    const q = query.trim().toLowerCase();
+                    return !q || entry.name.toLowerCase().includes(q) ||
+                      entry.manifest.description?.toLowerCase().includes(q) ||
+                      (entry.manifest.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
+                  }).map((entry) => <RegistryGridCard key={entry.id} entry={entry} />)}
                 </div>
               )}
             </CardContent>
