@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="web/public/logo.svg" width="92" alt="ARTEX logo" />
-&nbsp;&nbsp;
-<img src="https://upload.wikimedia.org/wikipedia/commons/0/09/Backtrack_logo.png" width="240" alt="BackTrack legacy network security suite logo" />
+<img src="docs/ARTEX%20Superversion%20Cyberpunk%20README%20Banner.png" alt="ARTEX-Superversion — one intelligence layer, every tool, one auditable ecosystem" width="100%" />
 
 # ARTEX // SUPERVERSION
 
@@ -21,9 +19,6 @@ evidence, authorization, and human oversight at the center.
 
 [Vision](#the-vision) · [Roadmap](#the-roadmap) · [Architecture](#planned-ecosystem-architecture) · [Quick start](#quick-start) · [Security](#security) · [Contributing](#contributing)
 
-
-
-<sub>BackTrack legacy logo: <a href="https://commons.wikimedia.org/wiki/File:Backtrack_logo.png">Wikimedia Commons</a>.</sub>
 
 </div>
 
