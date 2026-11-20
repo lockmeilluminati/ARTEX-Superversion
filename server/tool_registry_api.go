@@ -3,13 +3,13 @@ package server
 import (
 	"encoding/json"
 	"errors"
-
-	"github.com/Autumn-27/artex/db"
 	"log"
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/Autumn-27/artex/db"
 	"github.com/Autumn-27/artex/toolregistry"
 )
 
@@ -28,7 +28,7 @@ type registryCatalogRecord struct {
 	ReviewStatus string `json:"review_status"`
 	ReviewNote string `json:"review_note,omitempty"`
 	ReviewedBy string `json:"reviewed_by,omitempty"`
-	ReviewedAt any `json:"reviewed_at,omitempty"`
+	ReviewedAt *time.Time `json:"reviewed_at,omitempty"`
 }
 
 // pgListToolRegistry returns one catalogue containing legacy native/custom
@@ -103,7 +103,7 @@ func (s *Server) pgListToolRegistry(w http.ResponseWriter, r *http.Request) {
 
 type registryReviewRequest struct {
 	Status string `json:"status"`
-	Note string `json:"note"`
+	Note   string `json:"note"`
 }
 
 func validateRegistryReviewRequest(req registryReviewRequest) error {
@@ -125,7 +125,9 @@ func validateRegistryReviewRequest(req registryReviewRequest) error {
 // Approval is a metadata review only; it never enables, installs, or grants execution.
 func (s *Server) pgReviewToolRegistry(w http.ResponseWriter, r *http.Request) {
 	pg := s.pg(w)
-	if pg == nil { return }
+	if pg == nil {
+		return
+	}
 	id := strings.TrimSpace(r.PathValue("id"))
 	if !strings.HasPrefix(id, "external.") {
 		writeErr(w, http.StatusBadRequest, "only external registry profiles can be reviewed")
