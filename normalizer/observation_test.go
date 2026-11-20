@@ -81,3 +81,26 @@ func TestPortObservationRequiresValidPort(t *testing.T) {
 	if _, err := ParsePort("0"); err == nil { t.Fatal("port zero accepted") }
 	if _, err := ParsePort("65536"); err == nil { t.Fatal("out-of-range port accepted") }
 }
+
+func TestObservationValidateRequiresRawEvidenceReference(t *testing.T) {
+	o := validObservation()
+	o.Evidence = nil
+	if err := o.Validate(); err == nil || !strings.Contains(err.Error(), "evidence reference") {
+		t.Fatalf("expected missing evidence error, got %v", err)
+	}
+}
+
+func TestCollectionStatusesRemainDistinct(t *testing.T) {
+	states := []CollectionStatus{CollectionUnknown, CollectionNotTested, CollectionTestedPositive, CollectionTestedNegative, CollectionPartial, CollectionFailed}
+	seen := map[CollectionStatus]bool{}
+	for _, state := range states {
+		if seen[state] { t.Fatalf("duplicate collection state %q", state) }
+		seen[state] = true
+		o := validObservation()
+		o.Collection = state
+		if err := o.Validate(); err != nil { t.Fatalf("state %q rejected: %v", state, err) }
+	}
+	if CollectionNotTested == CollectionTestedNegative || CollectionPartial == CollectionFailed {
+		t.Fatal("collection state semantics collapsed")
+	}
+}
