@@ -195,11 +195,17 @@ func sharedToolCatalogue(pg *db.DB, agentKey string) actool.CoreTool {
 			if len(entries) > args.Limit {
 				entries = entries[:args.Limit]
 			}
+			var observedAt any
+			var profileEvidence []string
+			if profile != nil {
+				observedAt = profile.ObservedAt
+				profileEvidence = profile.Evidence
+			}
 			payload, err := json.Marshal(map[string]any{
 				"entries": entries, "returned": len(entries), "total_matches": total,
 				"truncated": total > len(entries),
 				"execution_boundary": "Catalogue visibility is descriptive only. It does not install, enable, approve, bind, or execute a tool. Use only callable tools explicitly supplied to this agent.",
-				"agent_profile": map[string]any{"agent_id": agentProfile.ID, "capabilities": agentProfile.Capabilities, "platforms": agentProfile.Platforms, "observed": profile != nil, "observed_at": profile.ObservedAt, "evidence": profile.Evidence},
+				"agent_profile": map[string]any{"agent_id": agentProfile.ID, "capabilities": agentProfile.Capabilities, "platforms": agentProfile.Platforms, "observed": profile != nil, "observed_at": observedAt, "evidence": profileEvidence},
 			})
 			if err != nil {
 				return actool.Errorf("encode catalogue: " + err.Error()), nil
