@@ -15,7 +15,7 @@ they must not create a second execution engine or bypass existing controls.
 | Package | Responsibility | Current state |
 |---|---|---|
 | `integrations` | Adapter identity, health and future operation contracts | Initial contract + health probe |
-| `integrations/yakit` | Yakit connector boundary | Health adapter; upstream interface pending verification |
+| `integrations/yakit` | Yakit connector boundary | Read-only health adapter; installed upstream interface pending verification |
 | `integrations/kali` | Kali tool discovery boundary | Fixed allowlist version discovery |
 | `toolregistry` | Unified manifest, lifecycle registry, and read-only importer for existing `tools` rows | In-memory registry + DB projection; not yet wired into server/API |
 | `provenance` | Repository identity, ownership, release and lifecycle evidence | Data contracts + verifier interface |
@@ -87,3 +87,16 @@ The first compatibility slice is now implemented in `toolregistry`:
 - Approval remains explicitly required in the projected metadata.
 
 This slice does not yet catalogue live MCP tools, skills, Kali packages or Yakit capabilities, and it is not yet connected to an HTTP endpoint or agent runtime. It does not change execution behavior.
+
+
+## First external catalogue entry: Yakit
+
+The `external.yakit` manifest is the first external tool record. Migration
+`0009_tool_registry.sql` creates the metadata table and seeds this candidate profile.
+The record includes the upstream project, AGPL-3.0 license, maintainer identity, descriptive
+capability labels, and conservative initial state (`candidate`, `unknown`, `unverified`,
+`enabled=false`). It does not register an execution handler or establish connectivity.
+
+See [Yakit tool profile](YAKIT-TOOL-PROFILE.md). The profile's capability labels are descriptive;
+the exact automation interface, supported operations, endpoint, authentication and schemas still
+require verification against the installed Yakit build.
