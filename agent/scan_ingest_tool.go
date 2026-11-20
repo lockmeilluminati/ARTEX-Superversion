@@ -9,8 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Autumn-27/artex/db"
+	"github.com/Autumn-27/artex/normalizer"
 	acperm "github.com/Autumn-27/norma/permission"
 	actool "github.com/Autumn-27/norma/tool"
 )
@@ -136,7 +138,15 @@ func (t *ToolSet) runScanIngest(ctx context.Context, in json.RawMessage, tc *act
 		return actool.Errorf("the file could not be read as " + a.Format + " output"), nil
 	}
 
+	sourceTools := map[string]string{"nmap-xml": "external.nmap", "nuclei-jsonl": "external.nuclei", "httpx-jsonl": "external.httpx", "ffuf-json": "external.ffuf"}
+	obsCtx, obsErr := newObservationContext(t.taskID, sourceTools[a.Format], a.Path, time.Now().UTC())
+	observations := []normalizer.Observation{}
+	if obsErr == nil {
+		observations = scanObservations(obsCtx, s.Assets)
+	}
 	out := map[string]any{
+		"normalized_observations": observations,
+		"normalization_warning": func() string { if obsErr != nil { return obsErr.Error() }; return "" }(),
 		"format": a.Format, "hosts": len(s.hosts), "ports": s.Ports, "urls": len(s.urls), "events": s.Events,
 		"skipped": s.Skipped, "oversized_lines": s.Oversized, "over_cap": s.OverCap, "truncated": s.Truncated, "notable": s.Notable,
 	}
