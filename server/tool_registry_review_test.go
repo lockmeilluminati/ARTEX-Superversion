@@ -4,8 +4,8 @@ import "testing"
 
 func TestValidateRegistryReviewRequest(t *testing.T) {
 	tests := []struct {
-		name string
-		req registryReviewRequest
+		name    string
+		req     registryReviewRequest
 		wantErr bool
 	}{
 		{name: "approve", req: registryReviewRequest{Status: "approved"}},
