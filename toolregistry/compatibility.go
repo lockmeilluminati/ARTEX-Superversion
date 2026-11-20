@@ -28,6 +28,7 @@ type CompatibilityResult struct {
 	ToolID string                `json:"tool_id"`
 	Status CompatibilityStatus  `json:"status"`
 	Missing []AgentCapability    `json:"missing_capabilities,omitempty"`
+	MissingPlatforms []string `json:"missing_platforms,omitempty"`
 	Unknown []string             `json:"unknown_requirements,omitempty"`
 	Reasons []string             `json:"reasons,omitempty"`
 }
@@ -84,11 +85,12 @@ func MatchAgent(agent AgentProfile, tool Manifest) CompatibilityResult {
 		if len(agent.Platforms) == 0 {
 			result.Unknown = append(result.Unknown, "agent platform support is undeclared")
 		} else if !hasPlatformOverlap(agent.Platforms, tool.Platforms) {
-			result.Missing = append(result.Missing, AgentCapability("platform:"+joinPlatforms(tool.Platforms)))
+			result.MissingPlatforms = append(result.MissingPlatforms, tool.Platforms...)
+			sort.Strings(result.MissingPlatforms)
 		}
 	}
 
-	if len(result.Missing) > 0 {
+	if len(result.Missing) > 0 || len(result.MissingPlatforms) > 0 {
 		result.Status = CompatibilityIncompatible
 		result.Reasons = append(result.Reasons, "agent lacks one or more required capabilities or platform support")
 	} else if len(result.Unknown) > 0 {
