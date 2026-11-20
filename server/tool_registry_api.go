@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Autumn-27/artex/db"
 	"github.com/Autumn-27/artex/toolregistry"
 )
 
@@ -51,6 +50,3 @@ func (s *Server) pgListToolRegistry(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"entries": entries})
 }
 
-// Keep the DB type referenced here so this endpoint's response contract remains
-// explicitly tied to the persisted registry row model.
-var _ = db.RegistryEntry{}
