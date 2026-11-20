@@ -11,6 +11,7 @@ var (
 	ErrMissingLifecycle = errors.New("tool lifecycle is required")
 	ErrDuplicate = errors.New("tool manifest already exists")
 	ErrNotFound = errors.New("tool manifest not found")
+	ErrNilDB = errors.New("tool registry database is nil")
 )
 
 type Registry struct {
