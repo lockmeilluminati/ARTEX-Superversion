@@ -43,7 +43,7 @@ This is a source-level baseline, not an end-to-end verification. It records what
 - Parser inputs are typed and validated. Target-controlled text (banners, titles, template names, extracted values) is retained only as inert quoted fact detail; URL userinfo is stripped. Malformed lines are counted/skipped; truncated files preserve complete records and report truncation.
 - Scanner assets flow through `insert_assets`; scanner facts flow through `recordScanFacts`, which deduplicates by source + summary + detail within the task exploration graph. Asset upserts provide the asset-level idempotence. The source contains parser and tool-constructor tests, including PostgreSQL-backed ingestion tests, but these tests have not been run in this work session.
 - `agent/bbot_ingest.go` and `agent/bbot_ingest_tool.go` contain a typed BBot JSONL parser. Only `scope_distance == 0` events may create assets through `insert_assets`; other or missing scope distances become `third_party_intel` facts and never auto-enter task scope. Only typed fields drive routing; free text is inert quoted detail. Oversized and malformed lines are counted.
-- These parser implementations are confirmed in source. Their full runtime exposure/agent binding and the end-to-end command → output file → parser invocation chain still need verification before calling the scanner ingestion path operational.
+- Both `ingest_bbot` and `ingest_scan_output` are included in `ToolSet.WorkerTools()`; `BuiltinToolSeeds()` derives the worker's default managed-tool bindings from that set. Runtime availability still depends on the persisted tool row remaining enabled/bound, and the actual scanner binaries/commands and end-to-end execution have not been exercised here.
 
 ## Current classification
 
@@ -57,18 +57,17 @@ This is a source-level baseline, not an end-to-end verification. It records what
 | Asset upsert and API persistence | Implemented | `db/assets.go`, `server/assets.go` |
 | `insert_assets` handler-to-store lineage | Implemented | `agent/tools_insert.go` → asset interception → typed `AssetStore.Upsert*` → task provenance/auto-scope |
 | External scanner binary detection and execution | Not established | Registry profiles are metadata-only; README toolchain references do not prove local installation or invocation |
-| Scanner-specific output parsers | Implemented in source; runtime exposure pending | Nmap XML, Nuclei JSONL, httpx JSONL, ffuf JSON and BBot JSONL parsers exist; callable binding and end-to-end operation still need confirmation |
+| Scanner-specific output parsers | Implemented and included in default worker tool set | Nmap XML, Nuclei JSONL, httpx JSONL, ffuf JSON and BBot JSONL parsers are called by worker tools; actual binary availability and end-to-end execution remain unverified |
 | Asset/finding UI visibility | Implemented at API/UI level; run-to-view refresh partial | Assets page reads `/api/assets` and has explicit manual refresh; findings flat/group views refresh periodically, while asset-tree view is loaded on entry/filter change. A scanner run is not yet proven to trigger an asset-page refresh automatically |
 | Raw output/evidence pointer attached to every normalized asset observation | Not established | Existing facts/findings can hold evidence text; canonical raw-evidence lineage is still a design gap |
 
 ## Gaps to close next
 
-1. Locate and trace the `insert_assets` implementation and every caller; verify validation, partial-batch behavior, provenance and idempotence.
-2. Inventory actual scanner commands/tools invoked by Bash, custom command tools, MCP and any dedicated adapters. Distinguish tool documentation from executable integration.
-3. Inventory parsers (including any file-based imports such as BBot) and trace each parser output to facts, assets, findings or nowhere.
-4. Trace the frontend routes/components consuming `GET /api/assets` and `GET /api/exploration/findings`, including task-scoped views and refresh.
-5. Add end-to-end fixtures that start with representative tool output and assert persisted assets/facts/findings plus source lineage.
-6. Use those findings to define the canonical observation contract without duplicating the existing asset, exploration or finding stores.
+1. Inventory which scanner binaries/commands are actually present in the configured worker environment and how the worker invokes them through Bash. Do not infer installation from the parser or catalogue.
+2. Run the existing parser and PostgreSQL-backed fixtures, then add end-to-end fixtures that exercise command → output file → worker ingestion tool → persisted assets/facts.
+3. Confirm whether scanner completion should trigger an asset-page refresh signal; the current assets page exposes manual refresh, while finding views have their own refresh behavior.
+4. Extend parser coverage only for missing high-value formats after the local command inventory.
+5. Define the canonical observation contract using the verified pipeline, without duplicating the existing asset, exploration or finding stores.
 
 ## Safety and interpretation
 
