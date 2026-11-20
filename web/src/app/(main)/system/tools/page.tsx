@@ -477,6 +477,24 @@ export default function ToolsPage() {
   const allCustomCount = tools.filter((t) => !t.system).length;
   // clicking a built-in tool opens the binding drawer; a custom tool opens its full editor.
   const openTool = (t: Tool) => (t.system ? setSelectedKey(t.key) : setCustomEdit(t));
+  const externalEntries = registryEntries.filter((entry) => entry.source === "external");
+  const externalCategories = ["All", ...Array.from(new Set(
+    externalEntries.map(externalToolCategory).filter((category) => category && category !== "Other"),
+  )).sort((a, b) => a.localeCompare(b)), ...(externalEntries.some((entry) => externalToolCategory(entry) === "Other") ? ["Other"] : [])];
+  const filteredExternalEntries = externalEntries.filter((entry) => {
+    const q = query.trim().toLowerCase();
+    const searchable = [
+      entry.name,
+      entry.description ?? "",
+      entry.manifest?.description ?? "",
+      ...(entry.manifest?.capabilities ?? []),
+      ...(entry.manifest?.platforms ?? []),
+      entry.manifest?.license ?? "",
+      entry.manifest?.maintainer ?? "",
+    ].join(" ").toLowerCase();
+    return (!q || searchable.includes(q)) &&
+      (registryCategory === "All" || externalToolCategory(entry) === registryCategory);
+  });
 
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-6">
@@ -604,31 +622,17 @@ export default function ToolsPage() {
             </CardHeader>
             <CardContent>
               <div className="mb-4 flex flex-wrap gap-2">
-                {["All", "Reconnaissance", "Web security", "Network analysis", "Forensics", "Other"].map((category) => (
+                {externalCategories.map((category) => (
                   <Button key={category} type="button" size="sm" variant={registryCategory === category ? "default" : "outline"} onClick={() => setRegistryCategory(category)}>
                     {category}
                   </Button>
                 ))}
               </div>
-              {registryEntries.filter((entry) => entry.source === "external").filter((entry) => {
-                const q = query.trim().toLowerCase();
-                const matchesQuery = !q || entry.name.toLowerCase().includes(q) ||
-                  entry.manifest?.description?.toLowerCase().includes(q) ||
-                  (entry.manifest?.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
-                const matchesCategory = registryCategory === "All" || externalToolCategory(entry) === registryCategory;
-                return matchesQuery && matchesCategory;
-              }).length === 0 ? (
+              {filteredExternalEntries.length === 0 ? (
                 <p className="text-muted-foreground py-6 text-center text-sm">{t("No registered external tools match this search.")}</p>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                  {registryEntries.filter((entry) => entry.source === "external").filter((entry) => {
-                    const q = query.trim().toLowerCase();
-                    const matchesQuery = !q || entry.name.toLowerCase().includes(q) ||
-                      entry.manifest?.description?.toLowerCase().includes(q) ||
-                      (entry.manifest?.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
-                    const matchesCategory = registryCategory === "All" || externalToolCategory(entry) === registryCategory;
-                    return matchesQuery && matchesCategory;
-                  }).map((entry) => <RegistryGridCard key={entry.id} entry={entry} onSelect={setSelectedRegistry} />)}
+                  {filteredExternalEntries.map((entry) => <RegistryGridCard key={entry.id} entry={entry} onSelect={setSelectedRegistry} />)}
                 </div>
               )}
             </CardContent>
