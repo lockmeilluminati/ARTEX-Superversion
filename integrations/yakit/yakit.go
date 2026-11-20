@@ -5,6 +5,7 @@ package yakit
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/Autumn-27/artex/integrations"
 )
