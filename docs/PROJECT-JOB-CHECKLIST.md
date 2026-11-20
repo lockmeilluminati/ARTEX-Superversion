@@ -24,7 +24,7 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 - [x] Reuse the existing persistent asset model for domains, IPs, ports, services, URLs, technologies and related observations (`db/assets.go`).
 - [x] Reuse the existing exploration graph, planner/worker lineage and findings persistence (`agent/tools.go`, `db/findings.go`). This is existing ARTEX foundation, not a newly completed Superversion feature.
 - [~] **P0 — Baseline the real collection pipeline.** `docs/COLLECTION-PIPELINE-BASELINE.md` now traces `insert_assets` through fail-closed asset interception, typed upserts, task provenance and auto-scope; documents Nmap/Nuclei/httpx/ffuf and BBot parser code; and maps the asset/finding APIs to their UI views. Both `ingest_bbot` and `ingest_scan_output` are included in the default worker tool set. Remaining: verify local scanner binary availability and command-to-file-to-ingestion operation, run parser/DB fixtures, and confirm asset-view refresh behavior.
-- [ ] **P0 — Define a canonical observation contract.** Specify normalized host, domain, IP, port, service, URL, technology and finding observations with source tool, source run/task, timestamp, raw-evidence pointer, scope, confidence and collection status. Preserve raw evidence; do not silently convert guesses into facts.
+- [ ] **P0 — Define a canonical observation/evidence contract (NEXT JOB).** Specify normalized host, domain, IP, port, service, URL, technology and finding observations with source tool, source run/task, observed timestamp, raw-evidence reference, scope, confidence, verification state and collection status. Define stable IDs, field ownership, deduplication keys and how conflicting observations are retained. Reuse the existing asset, exploration and findings stores; do not create a parallel knowledge store or silently convert inferences into facts. Acceptance: documented schema/enums and migration plan, compatibility mapping from current facts/assets/findings, representative Nmap/httpx/Nuclei/BBot examples, and contract tests for unknown, negative, partial and conflicting observations.
 - [ ] **P0 — Make ingestion reliable and idempotent.** Add parsers/adapters for the highest-value existing discovery outputs; validate inputs, handle partial/malformed results, deduplicate repeated observations and update last-seen/source lineage without losing history.
 - [ ] **P1 — Correlate the attack-surface graph.** Link domains↔IPs↔ports↔services↔URLs↔technologies↔findings with explainable edges and provenance. Resolve duplicates conservatively and retain conflicting observations rather than overwriting them.
 - [ ] **P1 — Build collection coverage intelligence.** Track which assets and discovery dimensions have been checked, which are stale, what failed, and what remains unknown. Distinguish not-tested from tested-negative.
@@ -106,18 +106,19 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 
 ## Current next-up sequence
 
-The next jobs prioritize the shared agent tool ecosystem and core intelligence gathering. Marketplace work is focused on readiness and operational usefulness rather than decorative expansion.
+The next jobs prioritize reliable evidence and core intelligence gathering. The canonical observation/evidence contract is the immediate next implementation job; downstream ingestion, correlation and recommendations must build on it.
 
-1. **P0 — Finish shared tool visibility in runtime.** Inject the shared registry snapshot into planner/worker context so all agents see the same tools, while retaining per-agent execution permissions.
-2. **P0 — Validate runtime capability profiles against live configured agents.** Profile persistence, authenticated API, operator UI and explicit planner compatibility rules are committed; live-instance validation and DB-backed assembly/API test runs remain.
-3. **P0 — Make Yakit the first live external integration.** Verify the actual installed version and interface, then implement only supported adapter operations.
-4. **P0 — Implement Kali OS discovery.** Find tools actually installed, collect version/path/package provenance, and idempotently update the shared catalogue.
-5. **P0 — Verify the collection pipeline operationally.** Parser tools are included in the worker tool set; confirm local scanner binary availability and command → output file → parser → persistence, run DB-backed fixtures, and validate asset UI refresh as detailed in `docs/COLLECTION-PIPELINE-BASELINE.md`.
-6. **P0 — Define the canonical observation/evidence contract and reliable ingestion.**
-7. **P1 — Add measured performance profiles and live registry refresh across agents.**
-8. **P1 — Correlate assets, track coverage/freshness and generate evidence-backed next actions.**
-9. **P2 — Improve planner/worker orchestration, intelligence UI and VEQ.**
-10. **Maintenance:** validate marketplace, collections and review workflow; continue only necessary defects/security fixes.
+1. **P0 — Define the canonical observation/evidence contract (NEXT).** Establish the shared schema, provenance fields, confidence/verification/collection-status semantics, stable identity and conflict handling. Map it onto the existing asset, exploration and finding stores; document examples and acceptance tests before adding another ingestion path.
+2. **P0 — Verify the collection pipeline operationally.** Confirm local scanner binary availability and command → output file → worker parser → persistence, run parser/DB fixtures, and validate asset UI refresh as detailed in `docs/COLLECTION-PIPELINE-BASELINE.md`.
+3. **P0 — Finish shared tool visibility in runtime.** Ensure the shared registry snapshot is available in planner/worker context while preserving per-agent execution permissions and live refresh.
+4. **P0 — Validate runtime capability profiles against live configured agents.** Profile persistence, authenticated API, operator UI and explicit planner compatibility rules are committed; live-instance validation and DB-backed assembly/API test runs remain.
+5. **P0 — Make Yakit the first live external integration.** Verify the actual installed version and interface, then implement only supported adapter operations.
+6. **P0 — Implement Kali OS discovery.** Find tools actually installed, collect version/path/package provenance, and idempotently update the shared catalogue.
+7. **P0 — Make ingestion reliable and idempotent against the agreed contract.** Add/adjust adapters, partial/malformed handling, deduplication and source lineage without losing history.
+8. **P1 — Add measured performance profiles and live registry refresh across agents.**
+9. **P1 — Correlate assets, track coverage/freshness and generate evidence-backed next actions.**
+10. **P2 — Improve planner/worker orchestration, intelligence UI and VEQ.**
+11. **Maintenance:** validate marketplace, collections and review workflow; continue only necessary defects/security fixes.
 
 ## Status reporting rules
 
