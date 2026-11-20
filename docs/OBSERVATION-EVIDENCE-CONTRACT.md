@@ -175,3 +175,23 @@ These are normalized contract examples, not claims that a live scan was run.
 - Out-of-scope evidence is retained but never auto-scoped.
 - Nuclei candidate output remains unverified until an explicit verifier succeeds.
 - Partial/truncated and failed collection states remain distinct from tested-negative.
+
+
+## Runtime adapter status (2026-11-20)
+
+The worker ingestion tools now expose a `normalized_observations` projection alongside their existing asset/fact results:
+
+- `ingest_scan_output` maps parser-produced asset records for Nmap, Nuclei, httpx and ffuf to the shared contract.
+- `ingest_bbot` maps typed in-scope and third-party-intelligence events; scope is carried explicitly.
+- Adapter unit tests cover HTTP service provenance, Nmap port mapping, BBot scope separation and missing task provenance.
+
+Important limitations (do not treat this as completed persistence):
+
+1. The projection is returned by the ingestion tool; it is not yet written to a durable observation-claim relation. Existing asset/fact writes remain the persistence path.
+2. The current scanner output formats do not supply a consistent scanner run ID. The adapter creates an ARTEX ingestion-attempt ID and labels it as such; a future execution-aware runner must pass the true scanner run ID.
+3. The evidence URI currently identifies the artifact by basename (for example, `artifact://scan.jsonl`). It is a locator hint, not an immutable evidence-store ID or digest. Replace it with a verified evidence-store reference before relying on it for long-term audit.
+4. The adapter uses task provenance from the current ToolSet. If task ID is unavailable, it emits a normalization warning and does not fabricate a task ID.
+5. Scope for Nmap/httpx/Nuclei/ffuf is `unknown` at this projection stage. Existing insertion interception remains authoritative; the projection does not grant scope or bypass interception.
+6. Nuclei matches remain unverified. The adapter maps scanner-derived asset observations, not confirmed vulnerability findings.
+
+Next validation: run `go test ./normalizer ./agent`, review adapter outputs against real parser fixtures, and design the durable claim-link mapping only after evidence-store and task schema review.
