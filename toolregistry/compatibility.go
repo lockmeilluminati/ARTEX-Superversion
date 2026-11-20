@@ -1,6 +1,9 @@
 package toolregistry
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 // AgentProfile describes the interaction capabilities of one ARTEX agent.
 // Capability declarations must describe actual runtime support, not desired support.
@@ -110,33 +113,7 @@ func hasPlatformOverlap(agentPlatforms, toolPlatforms []string) bool {
 
 func platformKey(platform string) string {
 	// Platform identifiers are metadata labels, so normalize case and surrounding whitespace.
-	return lowerTrim(platform)
-}
-
-func lowerTrim(value string) string {
-	value = trimSpace(value)
-	return lowerASCII(value)
-}
-
-func trimSpace(value string) string {
-	start, end := 0, len(value)
-	for start < end && (value[start] == ' ' || value[start] == '\t' || value[start] == '\n' || value[start] == '\r') {
-		start++
-	}
-	for start < end && (value[end-1] == ' ' || value[end-1] == '\t' || value[end-1] == '\n' || value[end-1] == '\r') {
-		end--
-	}
-	return value[start:end]
-}
-
-func lowerASCII(value string) string {
-	out := []byte(value)
-	for i, c := range out {
-		if c >= 'A' && c <= 'Z' {
-			out[i] = c + ('a' - 'A')
-		}
-	}
-	return string(out)
+	return strings.ToLower(strings.TrimSpace(platform))
 }
 
 func joinPlatforms(platforms []string) string {
