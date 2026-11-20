@@ -1,6 +1,8 @@
 <div align="center">
 
 <img src="web/public/logo.svg" width="92" alt="ARTEX logo" />
+&nbsp;&nbsp;
+<img src="https://upload.wikimedia.org/wikipedia/commons/0/09/Backtrack_logo.png" width="240" alt="BackTrack legacy network security suite logo" />
 
 # ARTEX // SUPERVERSION
 
@@ -18,6 +20,10 @@ evidence, authorization, and human oversight at the center.
 [![Based on BaaRai ARTEX](https://img.shields.io/badge/base-BaaRai%20ARTEX-6b34db)](https://github.com/BaaRai/ARTEX)
 
 [Vision](#the-vision) · [Roadmap](#the-roadmap) · [Architecture](#planned-ecosystem-architecture) · [Quick start](#quick-start) · [Security](#security) · [Contributing](#contributing)
+
+
+
+<sub>BackTrack legacy logo: <a href="https://commons.wikimedia.org/wiki/File:Backtrack_logo.png">Wikimedia Commons</a>.</sub>
 
 </div>
 
