@@ -969,6 +969,7 @@ func (s *Server) Handler() http.Handler {
 	// built-in tool catalog (description/param defaults editable, bound per agent; key and handler live in code)
 	mux.HandleFunc("GET /api/tools", s.pgListTools)
 	mux.HandleFunc("GET /api/tool-registry", s.pgListToolRegistry)
+	mux.HandleFunc("GET /api/agent-capabilities", s.pgListAgentCapabilities)
 	mux.HandleFunc("POST /api/tool-registry/{id}/review", s.pgReviewToolRegistry)
 	mux.HandleFunc("GET /api/tool-registry/{id}/reviews", s.pgListToolRegistryReviews)
 	mux.HandleFunc("GET /api/tool-collections", s.pgListToolCollections)
