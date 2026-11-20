@@ -43,14 +43,28 @@ func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
 		Schema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"query": map[string]any{"type": "string", "description": "Optional case-insensitive search across tool name, description, category and capabilities"},
-				"source": map[string]any{"type": "string", "enum": []string{"all", "native", "custom", "external"}, "description": "Optional source filter; defaults to all"},
-				"limit": map[string]any{"type": "integer", "minimum": 1, "maximum": 100, "description": "Maximum entries to return; defaults to 50"},
+				"query": map[string]any{
+					"type":        "string",
+					"description": "Optional case-insensitive search across tool name, description, category and capabilities",
+				},
+				"source": map[string]any{
+					"type":        "string",
+					"enum":        []string{"all", "native", "custom", "external"},
+					"description": "Optional source filter; defaults to all",
+				},
+				"limit": map[string]any{
+					"type":        "integer",
+					"minimum":     1,
+					"maximum":     100,
+					"description": "Maximum entries to return; defaults to 50",
+				},
 			},
 		},
 		ReadOnly: func(json.RawMessage) bool { return true },
 		Concurrent: func(json.RawMessage) bool { return true },
-		Permissions: func(context.Context, json.RawMessage, acperm.Context) acperm.Decision { return acperm.Allowed() },
+		Permissions: func(context.Context, json.RawMessage, acperm.Context) acperm.Decision {
+			return acperm.Allowed()
+		},
 		Run: func(_ context.Context, in json.RawMessage, _ *actool.ToolContext) (actool.Result, error) {
 			var args struct {
 				Query  string `json:"query"`
@@ -65,69 +79,126 @@ func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
 			if pg == nil {
 				return actool.Errorf("shared tool catalogue is unavailable: database is not initialized"), nil
 			}
-			if args.Limit <= 0 { args.Limit = 50 }
-			if args.Limit > 100 { args.Limit = 100 }
+			if args.Limit <= 0 {
+				args.Limit = 50
+			}
+			if args.Limit > 100 {
+				args.Limit = 100
+			}
 			source := strings.ToLower(strings.TrimSpace(args.Source))
-			if source == "" { source = "all" }
+			if source == "" {
+				source = "all"
+			}
 			if source != "all" && source != "native" && source != "custom" && source != "external" {
 				return actool.Errorf("source must be all, native, custom, or external"), nil
 			}
 			query := strings.ToLower(strings.TrimSpace(args.Query))
 			entries := make([]sharedCatalogueEntry, 0)
+
 			runtimeTools, err := pg.ListTools()
-			if err != nil { return actool.Errorf("read runtime catalogue: " + err.Error()), nil }
-			for _, t := range runtimeTools {
-				if t == nil { continue }
-				kind := "native"
-				if !t.System { kind = "custom" }
-				entry := sharedCatalogueEntry{ID: "runtime." + t.Key, Name: t.Key, Source: kind, Description: t.Description, Enabled: t.Enabled, Kind: t.Kind, ExecutionMode: "unknown", VerificationStatus: "unverified", InstallationStatus: "unknown"}
-				if source != "all" && source != kind { continue }
-				if catalogueMatches(query, entry.Name, entry.Description, entry.Category, entry.Capabilities) { entries = append(entries, entry) }
+			if err != nil {
+				return actool.Errorf("read runtime catalogue: " + err.Error()), nil
 			}
-			if source == "all" || source == "external" {
-				registryEntries, err := pg.ListRegistryEntries()
-				if err != nil { return actool.Errorf("read external catalogue: " + err.Error()), nil }
-				for _, row := range registryEntries {
-					var manifest toolregistry.Manifest
-					if err := json.Unmarshal(row.Manifest, &manifest); err != nil { continue }
-					if manifest.ID == "" { manifest.ID = row.ID }
-					if manifest.Name == "" { manifest.Name = row.Name }
-					entry := sharedCatalogueEntry{
-						ID: row.ID, Name: row.Name, Source: "external", Description: manifest.Description,
-						Enabled: manifest.Enabled, Kind: manifest.ExecutionKind, Category: manifest.Category,
-						License: manifest.License, Platforms: manifest.Platforms, Capabilities: manifest.Capabilities,
-						ExecutionMode: string(manifest.ExecutionMode), VerificationStatus: string(manifest.VerificationStatus),
-						InstallationStatus: string(manifest.InstallationStatus), Availability: string(manifest.Availability),
-						Trust: string(manifest.Trust), ApprovalRequired: manifest.ApprovalRequired, Lifecycle: string(manifest.Lifecycle),
-					}
-					for _, capability := range manifest.RequiredAgentCapabilities { entry.RequiredCapabilities = append(entry.RequiredCapabilities, string(capability)) }
-					if entry.ExecutionMode == "" { entry.ExecutionMode = "unknown" }
-					if entry.VerificationStatus == "" { entry.VerificationStatus = "unverified" }
-					if entry.InstallationStatus == "" { entry.InstallationStatus = "unknown" }
-					if catalogueMatches(query, entry.Name, entry.Description, entry.Category, entry.Capabilities) { entries = append(entries, entry) }
+			for _, t := range runtimeTools {
+				if t == nil {
+					continue
+				}
+				kind := "native"
+				if !t.System {
+					kind = "custom"
+				}
+				if source != "all" && source != kind {
+					continue
+				}
+				entry := sharedCatalogueEntry{
+					ID: "runtime." + t.Key, Name: t.Key, Source: kind,
+					Description: t.Description, Enabled: t.Enabled, Kind: t.Kind,
+					ExecutionMode: "unknown", VerificationStatus: "unverified",
+					InstallationStatus: "unknown",
+				}
+				if catalogueMatches(query, entry.Name, entry.Description, entry.Category, entry.Capabilities) {
+					entries = append(entries, entry)
 				}
 			}
+
+			if source == "all" || source == "external" {
+				registryEntries, err := pg.ListRegistryEntries()
+				if err != nil {
+					return actool.Errorf("read external catalogue: " + err.Error()), nil
+				}
+				for _, row := range registryEntries {
+					var manifest toolregistry.Manifest
+					if err := json.Unmarshal(row.Manifest, &manifest); err != nil {
+						continue
+					}
+					if manifest.ID == "" {
+						manifest.ID = row.ID
+					}
+					if manifest.Name == "" {
+						manifest.Name = row.Name
+					}
+					entry := sharedCatalogueEntry{
+						ID: row.ID, Name: row.Name, Source: "external",
+						Description: manifest.Description, Enabled: manifest.Enabled,
+						Kind: manifest.ExecutionKind, Category: manifest.Category,
+						License: manifest.License, Platforms: manifest.Platforms,
+						Capabilities: manifest.Capabilities,
+						ExecutionMode: string(manifest.ExecutionMode),
+						VerificationStatus: string(manifest.VerificationStatus),
+						InstallationStatus: string(manifest.InstallationStatus),
+						Availability: string(manifest.Availability), Trust: string(manifest.Trust),
+						ApprovalRequired: manifest.ApprovalRequired,
+						Lifecycle: string(manifest.Lifecycle),
+					}
+					for _, capability := range manifest.RequiredAgentCapabilities {
+						entry.RequiredCapabilities = append(entry.RequiredCapabilities, string(capability))
+					}
+					if entry.ExecutionMode == "" {
+						entry.ExecutionMode = "unknown"
+					}
+					if entry.VerificationStatus == "" {
+						entry.VerificationStatus = "unverified"
+					}
+					if entry.InstallationStatus == "" {
+						entry.InstallationStatus = "unknown"
+					}
+					if catalogueMatches(query, entry.Name, entry.Description, entry.Category, entry.Capabilities) {
+						entries = append(entries, entry)
+					}
+				}
+			}
+
 			sort.Slice(entries, func(i, j int) bool {
-				if entries[i].Source != entries[j].Source { return entries[i].Source < entries[j].Source }
+				if entries[i].Source != entries[j].Source {
+					return entries[i].Source < entries[j].Source
+				}
 				return entries[i].Name < entries[j].Name
 			})
 			total := len(entries)
-			if len(entries) > args.Limit { entries = entries[:args.Limit] }
+			if len(entries) > args.Limit {
+				entries = entries[:args.Limit]
+			}
 			payload, err := json.Marshal(map[string]any{
 				"entries": entries, "returned": len(entries), "total_matches": total,
 				"truncated": total > len(entries),
 				"execution_boundary": "Catalogue visibility is descriptive only. It does not install, enable, approve, bind, or execute a tool. Use only callable tools explicitly supplied to this agent.",
 			})
-			if err != nil { return actool.Errorf("encode catalogue: " + err.Error()), nil }
+			if err != nil {
+				return actool.Errorf("encode catalogue: " + err.Error()), nil
+			}
 			return actool.Text(string(payload)), nil
 		},
 	})
 }
 
 func catalogueMatches(query string, fields ...string) bool {
-	if query == "" { return true }
+	if query == "" {
+		return true
+	}
 	for _, field := range fields {
-		if strings.Contains(strings.ToLower(field), query) { return true }
+		if strings.Contains(strings.ToLower(field), query) {
+			return true
+		}
 	}
 	return false
 }
