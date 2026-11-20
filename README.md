@@ -862,6 +862,12 @@ For the code-level map (execution flow, trust boundaries, decisions) see
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); for startup, configuration precedence,
 backup and key rotation see [docs/OPS.md](docs/OPS.md).
 
+For the Superversion package blueprint and phase-by-phase implementation map, see
+[docs/PLATFORM-ARCHITECTURE.md](docs/PLATFORM-ARCHITECTURE.md),
+[docs/ROADMAP-IMPLEMENTATION.md](docs/ROADMAP-IMPLEMENTATION.md), and
+[docs/TEST-MATRIX.md](docs/TEST-MATRIX.md). The new packages currently provide architectural
+scaffolds and contracts; they are not all connected to the runtime yet.
+
 ---
 
 ## Security
