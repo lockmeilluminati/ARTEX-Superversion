@@ -158,7 +158,7 @@ func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
 						entry.ExecutionMode = "unknown"
 					}
 					if entry.VerificationStatus == "" {
-						entry.VerificationStatus = "unverified"
+						entry.VerificationStatus = "unknown"
 					}
 					if entry.InstallationStatus == "" {
 						entry.InstallationStatus = "unknown"
