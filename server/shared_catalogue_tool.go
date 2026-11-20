@@ -31,13 +31,14 @@ type sharedCatalogueEntry struct {
 	Trust                string   `json:"trust,omitempty"`
 	ApprovalRequired     bool     `json:"approval_required"`
 	Lifecycle            string   `json:"lifecycle,omitempty"`
+	Compatibility        *toolregistry.CompatibilityResult `json:"compatibility,omitempty"`
 	ReviewStatus         string   `json:"review_status,omitempty"`
 }
 
 // sharedToolCatalogue is injected into every agent by wireAgentAugment.
 // It deliberately returns metadata only: no custom exec specs, credentials,
 // input schemas, handlers, or permission mutations cross this boundary.
-func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
+func sharedToolCatalogue(pg *db.DB, agentKey string) actool.CoreTool {
 	return actool.Build(actool.Spec{
 		Name: "shared_tool_catalogue",
 		Description: "Read-only view of the platform-wide tool catalogue, including native, custom and external profiles. Use this to discover what tools exist and understand their declared readiness. Catalogue visibility does NOT mean a tool is callable, installed, verified, approved for execution, or bound to you. Only use tools actually present in your callable tool list; never try to execute a catalogue entry by name.",
@@ -95,6 +96,20 @@ func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
 			}
 			query := strings.ToLower(strings.TrimSpace(args.Query))
 			entries := make([]sharedCatalogueEntry, 0)
+			var agentProfile toolregistry.AgentProfile
+			profile, profileErr := pg.GetAgentCapabilityProfile(agentKey)
+			if profileErr != nil {
+				return actool.Errorf("read agent capability profile: " + profileErr.Error()), nil
+			}
+			if profile != nil {
+				agentProfile.ID = profile.AgentKey
+				agentProfile.Platforms = profile.Platforms
+				for _, capability := range profile.Capabilities {
+					agentProfile.Capabilities = append(agentProfile.Capabilities, toolregistry.AgentCapability(capability))
+				}
+			} else {
+				agentProfile.ID = agentKey
+			}
 
 			runtimeTools, err := pg.ListTools()
 			if err != nil {
@@ -163,6 +178,7 @@ func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
 					if entry.InstallationStatus == "" {
 						entry.InstallationStatus = "unknown"
 					}
+					entry.Compatibility = compatibilityPointer(toolregistry.MatchAgent(agentProfile, manifest))
 					if catalogueMatches(query, entry.Name, entry.Description, entry.Category, entry.Capabilities) {
 						entries = append(entries, entry)
 					}
@@ -183,6 +199,7 @@ func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
 				"entries": entries, "returned": len(entries), "total_matches": total,
 				"truncated": total > len(entries),
 				"execution_boundary": "Catalogue visibility is descriptive only. It does not install, enable, approve, bind, or execute a tool. Use only callable tools explicitly supplied to this agent.",
+				"agent_profile": map[string]any{"agent_id": agentProfile.ID, "capabilities": agentProfile.Capabilities, "platforms": agentProfile.Platforms, "observed": profile != nil},
 			})
 			if err != nil {
 				return actool.Errorf("encode catalogue: " + err.Error()), nil
@@ -202,4 +219,8 @@ func catalogueMatches(query string, fields ...string) bool {
 		}
 	}
 	return false
+}
+
+func compatibilityPointer(result toolregistry.CompatibilityResult) *toolregistry.CompatibilityResult {
+	return &result
 }
