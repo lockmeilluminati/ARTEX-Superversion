@@ -41,7 +41,7 @@ type sharedCatalogueEntry struct {
 func sharedToolCatalogue(pg *db.DB, agentKey string) actool.CoreTool {
 	return actool.Build(actool.Spec{
 		Name: "shared_tool_catalogue",
-		Description: "Read-only view of the platform-wide tool catalogue, including native, custom and external profiles. Use this to discover what tools exist, inspect your observed runtime capabilities, and see MatchAgent compatibility results for external profiles. Check compatibility before recommending an external profile, but remember that a compatible result is NOT an execution grant. Catalogue visibility does NOT mean a tool is callable, installed, verified, approved for execution, or bound to you. Only use tools actually present in your callable tool list; never try to execute a catalogue entry by name.",
+		Description: "Read-only view of the platform-wide tool catalogue, including native, custom and external profiles. Use this to discover what tools exist, inspect your observed runtime capabilities, and see MatchAgent compatibility results for external profiles. Use compatibility as a planning filter: recommend an external profile only when the result is compatible; treat conditional as requiring operator/environment verification and incompatible as unsuitable for this agent. Then separately inspect installation, verification, enabled state, approval requirements and agent binding. Even a compatible, installed and verified catalogue entry is NOT callable unless it is explicitly present in your callable tool list. Never try to execute a catalogue entry by name, and never treat catalogue visibility or compatibility as an execution grant.",
 		Schema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
