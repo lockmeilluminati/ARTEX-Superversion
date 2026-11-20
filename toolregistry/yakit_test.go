@@ -19,6 +19,9 @@ func TestYakitManifestIsCandidateAndNotExecutable(t *testing.T) {
 	if m.Enabled || m.Verified || m.Availability != AvailabilityUnknown {
 		t.Fatalf("Yakit must start disabled, unverified and unknown: %#v", m)
 	}
+	if m.ExecutionMode != ExecutionUnknown || m.VerificationStatus != VerificationUnverified || m.InstallationStatus != InstallationUnknown {
+		t.Fatalf("Yakit readiness must remain explicitly unknown/unverified: %#v", m)
+	}
 	if m.ExecutionKind != "external_adapter" || !m.ApprovalRequired {
 		t.Fatalf("unexpected execution policy: %#v", m)
 	}
