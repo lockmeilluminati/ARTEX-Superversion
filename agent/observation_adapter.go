@@ -62,19 +62,19 @@ func observationFromAsset(ctx observationContext, item assetInputItem) (normaliz
 			o.Attributes = ensureObservationAttributes(o.Attributes)
 			o.Attributes["http_status"] = fmt.Sprint(*item.StatusCode)
 		}
-	case item.IP != "":
-		o.Type, o.Target = normalizer.ObservationIP, item.IP
-	case item.ServiceIP != "" && item.Port > 0:
+	case item.ServiceIP != "" && item.Port > 0 && item.Port <= 65535:
 		o.Type, o.Target = normalizer.ObservationPort, item.ServiceIP
 		p := uint16(item.Port)
 		o.Port = &p
 		o.Protocol = item.Proto
-	case item.Domain != "":
-		o.Type, o.Target = normalizer.ObservationDomain, item.Domain
-	case item.IP != "" && item.Port > 0:
+	case item.IP != "" && item.Port > 0 && item.Port <= 65535:
 		o.Type, o.Target = normalizer.ObservationPort, item.IP
 		p := uint16(item.Port)
 		o.Port, o.Protocol = &p, item.Proto
+	case item.IP != "":
+		o.Type, o.Target = normalizer.ObservationIP, item.IP
+	case item.Domain != "":
+		o.Type, o.Target = normalizer.ObservationDomain, item.Domain
 	default:
 		return normalizer.Observation{}, false
 	}
