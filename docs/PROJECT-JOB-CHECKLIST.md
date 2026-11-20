@@ -31,7 +31,7 @@ Last reviewed: 2026-11-20
 - [~] Add individual tool artwork. Current cards use generic CSS artwork; add only verified tool logos/images and a safe fallback.
 - [x] Add marketplace sorting and side-by-side comparison (name, verification, trust, lifecycle, license; capabilities, platforms, license, trust, readiness and availability). Commits: a46f8919c7e355edd6e93c8ae3b86b2873cb38da and bd4ab5e4a56c5059acc6693de931519b83ce2b08.
 - [~] Expand the external catalogue with evidence-backed candidate profiles for Nmap, Nuclei, httpx, Katana, ffuf and Dalfox (migrations 0011 and 0012; docs/EXTERNAL-TOOL-CATALOG.md). Upstream sources, licenses and capabilities are recorded; all six remain disabled, unverified candidates pending local installation/interface checks and adapter tests.
-- [ ] Add a clear operator workflow for reviewing and promoting candidate registry entries.
+- [x] Add an authenticated operator review workflow for external registry metadata (approve/reject/reopen, required rejection reason, latest state and audit history). Approval is metadata-only and never enables, installs, verifies or grants execution. Migration 0013; see docs/TOOL-REVIEW-WORKFLOW.md. API validation tests added; DB migration/integration and frontend build validation pending.
 
 ## 3. Tool collections
 
@@ -69,7 +69,7 @@ Last reviewed: 2026-11-20
 
 ## 6. Quality, security and release readiness
 
-- [~] Add initial unit/security tests for registry manifest and API projection behavior.
+- [~] Add initial unit/security tests for registry manifest and API projection behavior, including operator review request validation. Database migration/integration tests remain pending.
 - [ ] Run gofmt on changed Go files.
 - [ ] Run go test ./....
 - [ ] Run go build ./....
@@ -85,9 +85,8 @@ Last reviewed: 2026-11-20
 
 1. Validate the current branch through CI: Go formatting/tests/build/vet and frontend lint/typecheck/build are configured; confirm a successful run and fix any failures.
 2. Finish tool collections: build frontend management, stale-ID display and database/authenticated HTTP integration tests.
-3. Complete catalogue profiles and add an operator review/promotion workflow; keep candidate records disabled until locally verified.
-4. Add verified marketplace artwork using attributable upstream assets.
-5. Verify Yakit's real interface, then implement and test its adapter.
+3. Validate the operator review workflow with migration tests and authenticated browser/API exercises; then add verified marketplace artwork using attributable upstream assets.
+4. Verify Yakit's real interface, then implement and test its adapter.
 6. Wire adapter lifecycle and permission gates into ARTEX.
 7. Complete VEQ recommendations, normalization and provenance workflows.
 
