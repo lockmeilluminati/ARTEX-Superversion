@@ -956,3 +956,15 @@ This project is provided "as is", without any express or implied warranty. The a
 contributors are not liable for any direct or indirect loss, data loss, system damage or legal
 dispute caused by the use of this tool (whether used properly or not). **Downloading, installing or
 using this project means you have read, understood and agreed to all of the above terms.**
+
+
+## First external tool profile: Yakit
+
+Yakit is the first external application recorded in the unified tool catalogue. It is a candidate
+integration—not the centre of the platform and not an executable ARTEX tool yet. Its stable
+catalogue identity is `external.yakit`. The database migration seeds it with the upstream project
+identity and license, while keeping it disabled, unverified, and limited to discovery/read-only
+permissions until its installed local interface is confirmed.
+
+See [the Yakit tool profile](docs/YAKIT-TOOL-PROFILE.md) and
+[the unified tool registry migration notes](docs/TOOL-REGISTRY-MIGRATION.md).
