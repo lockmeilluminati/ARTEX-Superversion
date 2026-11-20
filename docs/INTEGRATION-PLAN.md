@@ -96,3 +96,16 @@ argument schemas, scope enforcement, approval, and isolation appropriate to the 
 
 **Connect first. Verify second. Execute third.** Discovery is not authorization, and a successful
 connection is not permission to test a target.
+
+
+## Scaffold committed
+
+The first Go package scaffold now lives under `integrations/`:
+
+- `integrations/adapter.go`: adapter contract, health states, and thread-safe registry.
+- `integrations/health.go`: bounded, read-only local HTTP probe. It rejects non-loopback endpoints, redirects, embedded URL credentials, and oversized responses.
+- `integrations/yakit/`: Yakit adapter and mock endpoint tests. Configure only the exact health URL documented by the installed Yakit version.
+- `integrations/kali/discover.go`: fixed allowlist discovery for Nmap, Nuclei, ffuf, sqlmap, and Nikto. It uses direct process invocation with fixed version flags; no shell, scans, installs, or user-supplied commands.
+- Tests: `go test ./integrations/...`
+
+This is a library scaffold, not yet wired to an ARTEX API route or UI status panel. That is intentional: the next step is to confirm the local Yakit interface and then expose health through the existing server conventions. The Go test suite has not been executed in the remote repository environment; run the command above on the laptop before the first live connection test.
