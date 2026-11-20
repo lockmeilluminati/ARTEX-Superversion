@@ -35,6 +35,9 @@ func wireAgentAugment(pg *db.DB, skillDir string, hostTools func() ([]actool.Cor
 			return nil, agent.DeferredInfo{}, nil
 		}
 		var extra []actool.CoreTool
+		// Every agent receives the same live, read-only catalogue view.
+		// Catalogue visibility never grants callable-tool permissions.
+		extra = append(extra, sharedToolCatalogue(pg))
 
 		// --- skills: load visible skills into reg (used for the Skill meta-tool
 		// and to know which MCP servers are skill-gated). ---
