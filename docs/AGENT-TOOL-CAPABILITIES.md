@@ -57,3 +57,8 @@ All agents now receive the `shared_tool_catalogue` read-only tool through the co
 ## Runtime capability observation and matching
 
 Each agent assembly records its observed capability profile with evidence labels and timestamp. `terminal` is inferred only when the assembled baseline contains `Bash`; the platform is the ARTEX runtime's `GOOS` for that terminal environment. `mcp` is recorded only for connected MCP servers that returned tools. Browser, visual-interaction and screen-capture capabilities are added only when the connected `browser` MCP returns recognized interaction/screenshot tool names. API capability is deliberately not inferred from generic HTTP or model reasoning. The latest profile is persisted per agent and used by `shared_tool_catalogue` to attach `toolregistry.MatchAgent` results to external profiles. Unknown metadata remains conditional; incompatible profiles are not presented as executable. This is planning guidance, not an external execution path or automatic permission change.
+
+
+## Operator capability view
+
+The authenticated `GET /api/agent-capabilities` endpoint returns the latest persisted snapshots without execution configuration or secrets. The System → Tools → Agent capabilities tab shows each configured agent's observed capabilities, runtime platforms, timestamp and evidence labels. Agents without a snapshot are explicitly shown as not observed; the UI does not infer missing capabilities. The view is descriptive and does not alter tool bindings or permissions.
