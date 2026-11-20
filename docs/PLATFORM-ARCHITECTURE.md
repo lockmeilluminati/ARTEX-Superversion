@@ -17,7 +17,7 @@ they must not create a second execution engine or bypass existing controls.
 | `integrations` | Adapter identity, health and future operation contracts | Initial contract + health probe |
 | `integrations/yakit` | Yakit connector boundary | Read-only health adapter; installed upstream interface pending verification |
 | `integrations/kali` | Kali tool discovery boundary | Fixed allowlist version discovery |
-| `toolregistry` | Unified manifest, lifecycle registry, and read-only importer for existing `tools` rows | In-memory registry + DB projection; not yet wired into server/API |
+| `toolregistry` | Unified manifest, lifecycle registry, legacy importer, and external tool profiles | In-memory registry + legacy DB projection; external metadata persisted in `tool_registry`; no server/API yet |
 | `provenance` | Repository identity, ownership, release and lifecycle evidence | Data contracts + verifier interface |
 | `discovery` | Pluggable candidate discovery and human review | Provider/review contracts |
 | `tooldocs` | Source-backed generated documentation drafts | Profile contract + draft placeholder |
