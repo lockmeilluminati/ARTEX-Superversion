@@ -10,6 +10,9 @@ func TestYakitManifestIsCandidateAndNotExecutable(t *testing.T) {
 	if m.ID != YakitID {
 		t.Fatalf("ID = %q, want %q", m.ID, YakitID)
 	}
+	if m.Category != "Web security" {
+		t.Fatalf("category = %q, want Web security", m.Category)
+	}
 	if m.Lifecycle != LifecycleCandidate {
 		t.Fatalf("lifecycle = %q, want candidate", m.Lifecycle)
 	}
