@@ -53,3 +53,23 @@ func TestDeriveRuntimeAgentProfileDoesNotAssumeGUI(t *testing.T) {
 		}
 	}
 }
+
+func TestDerivedProfileFeedsToolCompatibility(t *testing.T) {
+	tools := []actool.CoreTool{actool.Build(actool.Spec{Name: "Bash"})}
+	profile, _ := deriveRuntimeAgentProfile("worker", tools, map[string][]string{
+		"browser": {"browser_navigate", "browser_click", "browser_take_screenshot"},
+	})
+	manifest := toolregistry.Manifest{
+		ID: "external.gui", ExecutionMode: toolregistry.ExecutionGUI,
+		Platforms: []string{profile.Platforms[0]},
+	}
+	got := toolregistry.MatchAgent(profile, manifest)
+	if got.Status != toolregistry.CompatibilityCompatible {
+		t.Fatalf("derived browser profile should match GUI requirements: %#v", got)
+	}
+	manifest.ExecutionMode = toolregistry.ExecutionCLI
+	got = toolregistry.MatchAgent(profile, manifest)
+	if got.Status != toolregistry.CompatibilityCompatible {
+		t.Fatalf("derived terminal profile should match CLI requirements: %#v", got)
+	}
+}
