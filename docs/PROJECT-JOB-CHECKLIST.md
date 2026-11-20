@@ -37,11 +37,11 @@ Last reviewed: 2026-11-20
 
 - [x] Add database schema for named tool collections and collection membership.
 - [x] Add database persistence functions to create, list, update, replace membership and delete collections. Commits: 11924acf136fc6fbe1e3ed2614fa01808510d86d and 2650ae0440c4b9aa53cc2e4a8f74a670e4ba1d77.
-- [ ] Add authenticated API endpoints for collection CRUD.
-- [ ] Validate collection membership against known catalogue IDs and handle missing/deleted tools safely.
+- [x] Add authenticated API endpoints for collection CRUD (GET/POST/PUT/DELETE; handlers use the authenticated PostgreSQL accessor).
+- [x] Validate submitted membership against stable runtime/external catalogue IDs; reject unknown/blank IDs and de-duplicate entries. Existing saved IDs are retained if a catalogue entry is later removed; the UI should surface that stale state.
 - [ ] Add frontend collection management: create, rename, describe, add/remove tools and delete.
 - [ ] Make it explicit in the UI that collection membership is organizational only and grants no installation, enablement or execution permission.
-- [ ] Add database/API tests for collection behavior, duplicate membership, invalid names, missing IDs and deletion.
+- [~] Add API validation unit tests for accepted, duplicate, blank and unknown IDs. Database transaction behavior and authenticated HTTP CRUD integration tests remain pending.
 
 ## 4. External integrations and execution safety
 
@@ -84,7 +84,7 @@ Last reviewed: 2026-11-20
 ## Current next-up sequence
 
 1. Validate the current branch through CI: Go formatting/tests/build/vet and frontend lint/typecheck/build are configured; confirm a successful run and fix any failures.
-2. Finish tool collections: implement authenticated API routes, frontend management and tests.
+2. Finish tool collections: build frontend management, stale-ID display and database/authenticated HTTP integration tests.
 3. Add verified marketplace artwork and sorting/comparison.
 4. Expand the catalogue with evidence-backed tool profiles.
 5. Verify Yakit's real interface, then implement and test its adapter.
