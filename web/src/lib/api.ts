@@ -11,6 +11,7 @@ import type {
   ActiveFindingRetest,
   Activity,
   Agent,
+  AgentCapabilityProfile,
   AgentDetail,
   AgentTrigger,
   ArchiveBatchItem,
