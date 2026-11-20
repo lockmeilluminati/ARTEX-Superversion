@@ -28,7 +28,7 @@ func (d *DB) ReviewRegistryEntry(registryID, status, note, reviewer string) erro
 	note = strings.TrimSpace(note)
 	if !strings.HasPrefix(registryID, "external.") || reviewer == "" ||
 		(status != "pending" && status != "approved" && status != "rejected") ||
-		(status == "rejected" && note == "") {
+		(status == "rejected" && note == "") || len(note) > 2000 {
 		return ErrInvalidRegistryReview
 	}
 
