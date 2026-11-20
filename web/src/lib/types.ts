@@ -1427,6 +1427,18 @@ export interface ToolRegistryRecord {
     permissions?: string[];
     agent_bindings?: string[];
     execution_kind?: string;
+    execution_mode?: "unknown" | "cli" | "gui" | "api" | "mcp" | "hybrid";
+    verification_status?: "unverified" | "partial" | "verified" | "failed";
+    installation_status?: "unknown" | "installed" | "missing" | "not_applicable";
+    verification_version?: string;
+    verified_at?: string;
+    required_agent_capabilities?: string[];
+    performance?: {
+      sample_count: number;
+      median_startup_ms?: number;
+      median_run_ms?: number;
+      last_measured_at?: string;
+    };
     enabled: boolean;
     availability: string;
     trust: string;
