@@ -26,6 +26,7 @@ Returns a read-only catalogue projection:
       "name": "Yakit",
       "source": "external",
       "description": "External tool profile",
+      "category": "Web security",
       "enabled": false,
       "kind": "external_adapter",
       "manifest": {
@@ -59,10 +60,20 @@ An external record must move through separate verification, installation/configu
 
 The Tools page loads the unified catalogue and displays registered external entries in the External ecosystem tab. Native and custom tools continue to use the existing API and editors so this migration does not break their current management path.
 
+## Marketplace discovery UI
+
+The External ecosystem tab now includes:
+- Search across tool name, description, and capabilities.
+- Category filters (curated manifest category takes precedence over a conservative keyword fallback).
+- Selectable tool cards that open a profile panel.
+- Profile metadata for lifecycle, availability, trust, execution kind, license, maintainer, capabilities, permissions, verification, approval requirement, and upstream source.
+
+Category metadata is optional in the manifest. Tools without it are grouped using a conservative frontend keyword fallback; that fallback is for browsing only and is not a verified capability classification.
+
 ## Next implementation steps
 
-1. Replace the three source-specific tabs with one searchable catalogue and source/category filters.
-2. Add rich per-tool profiles: artwork, specialties, platform compatibility, dependencies, provenance, and documentation.
+1. Replace the source-specific tabs with one unified searchable catalogue and source/category filters.
+2. Add real, verified per-tool artwork and richer profiles with platform compatibility, dependencies, provenance, and documentation.
 3. Add operator-managed selection collections that do not imply execution permission.
 4. Add explicit verification and installation workflows with audit records.
 5. Connect verified adapters to the existing guarded execution pipeline.
