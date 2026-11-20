@@ -1393,6 +1393,7 @@ export interface ToolRegistryRecord {
     legacy_key?: string;
     name: string;
     description?: string;
+    category?: string;
     version?: string;
     license?: string;
     maintainer?: string;
