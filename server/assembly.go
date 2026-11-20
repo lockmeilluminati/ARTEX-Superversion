@@ -37,7 +37,7 @@ func wireAgentAugment(pg *db.DB, skillDir string, hostTools func() ([]actool.Cor
 		var extra []actool.CoreTool
 		// Every agent receives the same live, read-only catalogue view.
 		// Catalogue visibility never grants callable-tool permissions.
-		extra = append(extra, sharedToolCatalogue(pg))
+		extra = append(extra, sharedToolCatalogue(pg, agentKey))
 
 		// --- skills: load visible skills into reg (used for the Skill meta-tool
 		// and to know which MCP servers are skill-gated). ---
@@ -177,6 +177,23 @@ func wireAgentAugment(pg *db.DB, skillDir string, hostTools func() ([]actool.Cor
 					unlock.Add(name) // global deferred → callable from the start
 				}
 			}
+		}
+
+		// Persist the actual capability surface assembled for this agent.
+		// DefaultTools are the common callable baseline; MCP capabilities are
+		// recorded only for servers that connected and returned tools this run.
+		assembled := append([]actool.CoreTool(nil), actool.DefaultTools()...)
+		assembled = append(assembled, extra...)
+		profile, evidence := deriveRuntimeAgentProfile(agentKey, assembled, serverTools)
+		capabilityNames := make([]string, 0, len(profile.Capabilities))
+		for _, capability := range profile.Capabilities {
+			capabilityNames = append(capabilityNames, string(capability))
+		}
+		if err := pg.UpsertAgentCapabilityProfile(db.AgentCapabilityProfile{
+			AgentKey: agentKey, Capabilities: capabilityNames,
+			Platforms: profile.Platforms, Evidence: evidence,
+		}); err != nil {
+			log.Printf("[agent-capabilities] %s profile update failed: %v", agentKey, err)
 		}
 
 		cleanup := func() {
