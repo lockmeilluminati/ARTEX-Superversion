@@ -401,7 +401,7 @@ function RegistryGridCard({ entry, onSelect }: { entry: ToolRegistryRecord; onSe
         </div>
         <div className="relative flex flex-col items-end gap-2">
           <span className="rounded-full border border-white/15 bg-black/20 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-sky-100/80">External registry</span>
-          <span className="font-mono text-[10px] text-slate-400">{m.execution_kind || "external"}</span>
+          <span className="font-mono text-[10px] text-slate-300">{m.execution_mode || "mode unknown"}</span>
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-3 p-4">
@@ -416,6 +416,8 @@ function RegistryGridCard({ entry, onSelect }: { entry: ToolRegistryRecord; onSe
         </div>
         <div className="mt-auto flex flex-wrap gap-1.5 border-t pt-3">
           <Badge variant="secondary" className="text-[10px]">{m.lifecycle || "candidate"}</Badge>
+          <Badge variant={m.verification_status === "verified" || m.verified ? "default" : "outline"} className="text-[10px]">Verification: {m.verification_status || (m.verified ? "verified" : "unverified")}</Badge>
+          <Badge variant="outline" className="text-[10px]">Install: {m.installation_status || "unknown"}</Badge>
           <Badge variant="outline" className="text-[10px]">Review: {entry.review_status || "pending"}</Badge>
           <Badge variant="outline" className="text-[10px]">Trust: {m.trust || "unknown"}</Badge>
           <Badge variant="outline" className="text-[10px]">{m.availability || "unknown"}</Badge>
@@ -925,7 +927,10 @@ export default function ToolsPage() {
                     ["Lifecycle", selectedRegistry.manifest.lifecycle],
                     ["Availability", selectedRegistry.manifest.availability],
                     ["Trust", selectedRegistry.manifest.trust],
-                    ["Execution", selectedRegistry.manifest.execution_kind || "Not configured"],
+                    ["Execution mode", selectedRegistry.manifest.execution_mode || "Unknown"],
+                    ["Execution adapter", selectedRegistry.manifest.execution_kind || "Not configured"],
+                    ["Verification", selectedRegistry.manifest.verification_status || (selectedRegistry.manifest.verified ? "verified" : "unverified")],
+                    ["Installation", selectedRegistry.manifest.installation_status || "Unknown"],
                     ["License", selectedRegistry.manifest.license || "Not verified"],
                     ["Maintainer", selectedRegistry.manifest.maintainer || "Not listed"],
                   ].map(([label, value]) => (
@@ -941,6 +946,23 @@ export default function ToolsPage() {
                     {(selectedRegistry.manifest.capabilities ?? []).map((item) => <Badge key={item} variant="outline">{item.replaceAll("_", " ")}</Badge>)}
                     {!(selectedRegistry.manifest.capabilities ?? []).length && <p className="text-xs text-muted-foreground">Capabilities have not been verified yet.</p>}
                   </div>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold">Agent requirements</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(selectedRegistry.manifest.required_agent_capabilities ?? []).map((item) => <Badge key={item} variant="outline">{item.replaceAll("_", " ")}</Badge>)}
+                    {!(selectedRegistry.manifest.required_agent_capabilities ?? []).length && <p className="text-xs text-muted-foreground">Requirements are not declared yet; compatibility remains unknown until verified.</p>}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold">Measured performance</h3>
+                  {selectedRegistry.manifest.performance ? (
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      <span>{selectedRegistry.manifest.performance.sample_count} samples</span>
+                      {selectedRegistry.manifest.performance.median_startup_ms != null && <span>Median startup: {selectedRegistry.manifest.performance.median_startup_ms} ms</span>}
+                      {selectedRegistry.manifest.performance.median_run_ms != null && <span>Median run: {selectedRegistry.manifest.performance.median_run_ms} ms</span>}
+                    </div>
+                  ) : <p className="text-xs text-muted-foreground">No measured performance data yet. CLI/GUI mode is not used as a speed estimate.</p>}
                 </div>
                 <div>
                   <h3 className="mb-2 text-sm font-semibold">Permissions and safeguards</h3>
