@@ -98,6 +98,7 @@ import type {
   TokenTotal,
   TokenUsage,
   Tool,
+  ToolRegistryRecord,
   ToolStat,
   TrafficDetail,
   TrafficEvidenceRef,
@@ -1250,6 +1251,7 @@ export const api = {
 
   // ---- tools (built-in tool catalog) ----
   tools: () => get<{ tools: Tool[] }>("/tools").then((r) => arr(r.tools)),
+  toolRegistry: () => get<{ entries: ToolRegistryRecord[] }>("/tool-registry").then((r) => arr(r.entries)),
   saveTool: (key: string, patch: Pick<Tool, "description" | "schema" | "agents" | "enabled">) =>
     put<{ ok: boolean }>(`/tools/${key}`, patch),
   resetTool: (key: string) => post<{ ok: boolean }>(`/tools/${key}/reset`, {}),
