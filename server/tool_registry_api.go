@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/Autumn-27/artex/db"
 	"github.com/Autumn-27/artex/toolregistry"
 )
 
@@ -88,5 +87,3 @@ func (s *Server) pgListToolRegistry(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"entries": entries})
 }
 
-// Keep the DB row contract explicit in this package's compile-time surface.
-var _ db.RegistryEntry
