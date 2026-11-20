@@ -367,6 +367,10 @@ function ToolGridCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
           </div>
           <ArrowUpRightIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-sky-500" />
         </div>
+        <div className="flex flex-wrap gap-1.5" aria-label="Execution readiness">
+          <Badge variant="outline" className="px-2 py-0.5 text-[10px]">Mode: not classified</Badge>
+          <Badge variant="outline" className="px-2 py-0.5 text-[10px]">Verification: not recorded</Badge>
+        </div>
         <div className="mt-auto flex flex-wrap items-center gap-1.5">
           {tool.agents.slice(0, 3).map((agent) => (
             <Badge key={agent} variant="outline" className="px-2 py-0.5 text-[10px]">{agent}</Badge>
