@@ -199,7 +199,7 @@ func sharedToolCatalogue(pg *db.DB, agentKey string) actool.CoreTool {
 				"entries": entries, "returned": len(entries), "total_matches": total,
 				"truncated": total > len(entries),
 				"execution_boundary": "Catalogue visibility is descriptive only. It does not install, enable, approve, bind, or execute a tool. Use only callable tools explicitly supplied to this agent.",
-				"agent_profile": map[string]any{"agent_id": agentProfile.ID, "capabilities": agentProfile.Capabilities, "platforms": agentProfile.Platforms, "observed": profile != nil},
+				"agent_profile": map[string]any{"agent_id": agentProfile.ID, "capabilities": agentProfile.Capabilities, "platforms": agentProfile.Platforms, "observed": profile != nil, "observed_at": profile.ObservedAt, "evidence": profile.Evidence},
 			})
 			if err != nil {
 				return actool.Errorf("encode catalogue: " + err.Error()), nil
