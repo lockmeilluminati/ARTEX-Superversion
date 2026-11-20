@@ -1377,6 +1377,36 @@ export interface Tool {
   calls?: number; // persistent runtime invocation count (older APIs may omit it)
 }
 
+// One descriptive external-tool record from the persisted marketplace registry.
+// This metadata is informational only; it does not imply an installed or executable adapter.
+export interface ToolRegistryRecord {
+  id: string;
+  name: string;
+  manifest: {
+    id: string;
+    legacy_key?: string;
+    name: string;
+    description?: string;
+    version?: string;
+    license?: string;
+    maintainer?: string;
+    canonical_repository?: string;
+    sources?: { kind: string; url?: string; revision?: string }[];
+    platforms?: string[];
+    dependencies?: { name: string; constraint?: string; kind?: string }[];
+    capabilities?: string[];
+    permissions?: string[];
+    agent_bindings?: string[];
+    execution_kind?: string;
+    enabled: boolean;
+    availability: string;
+    trust: string;
+    approval_required: boolean;
+    lifecycle: string;
+    verified: boolean;
+  };
+}
+
 // ---- Stats ----
 export interface Stats {
   assets: number;
