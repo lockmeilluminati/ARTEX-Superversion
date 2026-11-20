@@ -87,8 +87,8 @@ Last reviewed: 2026-11-20
 2. Finish tool collections: build frontend management, stale-ID display and database/authenticated HTTP integration tests.
 3. Validate the operator review workflow with migration tests and authenticated browser/API exercises; then add verified marketplace artwork using attributable upstream assets.
 4. Verify Yakit's real interface, then implement and test its adapter.
-6. Wire adapter lifecycle and permission gates into ARTEX.
-7. Complete VEQ recommendations, normalization and provenance workflows.
+5. Wire adapter lifecycle and permission gates into ARTEX.
+6. Complete VEQ recommendations, normalization and provenance workflows.
 
 ## Status reporting rules
 
