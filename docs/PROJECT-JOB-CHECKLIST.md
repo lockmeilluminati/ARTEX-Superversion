@@ -140,3 +140,12 @@ There are **10 substantive jobs remaining** in this sequence, plus ongoing maint
 - "Operational" means configured and successfully exercised end-to-end in the target environment.
 
 Do not mark a feature tested, verified or operational solely because its code has been committed.
+
+
+### Job 10 execution attempt — 2026-11-20
+
+- Re-read the current `.github/workflows/ci.yml`: the workflow is configured for pushes to `main` and pull requests. It includes the Go/PostgreSQL, shell, frontend and Python jobs described above.
+- Re-queried the repository Actions API: **0 workflow runs**. There is no run result or test log to inspect, and the available GitHub connection exposes read-only workflow inspection/retry actions but no workflow-dispatch action.
+- Checked the execution environment: Go is `1.23.2`, while `go.mod` requires Go `1.26.10`; Node is `22.16.0` and npm is `10.9.2`. The repository could not be cloned because this environment cannot resolve `github.com`.
+- Re-inspected `agent/bbot_ingest_tool.go` and `agent/scan_ingest_tool.go`; the required imports are present in the current branch. This is a source inspection only, not a compile or test result.
+- **Job 10 remains blocked / not passed.** No Go tests, build, vet, frontend lint/typecheck/build, migration test, or marketplace runtime test was executed. Do not count this job down until a CI run or a suitable local environment provides successful evidence.
