@@ -16,12 +16,14 @@ func YakitManifest() Manifest {
 	return Manifest{
 		ID:          YakitID,
 		Name:        "Yakit",
-		Description: "External security-testing platform for web traffic inspection, request manipulation and security testing workflows. ARTEX connectivity and supported automation operations must be verified against the installed Yakit version before use.",
+		Description: "External cyber security all-in-one platform. ARTEX connectivity and supported automation operations must be verified against the installed Yakit version before use.",
+		License: "AGPL-3.0",
+		Maintainer: "yaklang",
+		CanonicalRepository: "https://github.com/yaklang/yakit",
 		Sources: []Source{
 			{Kind: "upstream_project", URL: "https://github.com/yaklang/yakit"},
 			{Kind: "operator_installed_application"},
 		},
-		Platforms:     []string{"windows", "linux", "macos"},
 		Capabilities:  []string{"traffic_inspection", "request_replay", "web_security_testing", "plugin_workflows"},
 		Permissions:   []Permission{PermissionDiscover, PermissionReadOnly},
 		ExecutionKind: "external_adapter",
