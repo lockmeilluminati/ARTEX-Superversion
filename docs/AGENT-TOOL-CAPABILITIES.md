@@ -44,7 +44,7 @@ The result is a compatibility assessment only. It never enables a tool, grants p
 
 ## Current integration boundary
 
-This commit adds the shared metadata contract, deterministic matching logic, tests and marketplace display fields. The existing marketplace API exposes the manifest metadata. It does **not yet** inject the external registry into planner/worker runtime prompts or allow external tools to execute. Agent profiles are not yet persisted or populated from actual runtime capabilities. Those are subsequent integration jobs.
+This commit adds the shared metadata contract, deterministic matching logic, tests and marketplace display fields. The common agent-augmentation hook now derives a conservative runtime profile from assembled default tools and connected MCP servers, persists it in `agent_capability_profiles`, and exposes per-agent compatibility results in `shared_tool_catalogue`. The catalogue remains descriptive: external profiles are not callable, and compatibility never changes tool bindings or grants execution. Profiles refresh when an agent's tools are assembled; they are not a live hardware/OS probe and do not claim GUI support unless the configured browser MCP returns recognized screenshot and interaction tools.
 
 Yakit remains explicitly unknown/unverified until ARTEX checks the actual installed version and supported interface. No assumed endpoint, port, API or GUI automation is declared.
 
@@ -52,3 +52,8 @@ Yakit remains explicitly unknown/unverified until ARTEX checks the actual instal
 ## Shared runtime catalogue visibility
 
 All agents now receive the `shared_tool_catalogue` read-only tool through the common agent augmentation hook. It reads current native/custom runtime tool rows and external registry manifests at call time, so registry metadata changes are visible without rebuilding an agent-specific catalogue. The response intentionally omits custom execution specifications, secrets and input schemas. It labels unknown readiness conservatively and states that catalogue visibility is not a callable-tool grant. Actual execution still depends on the existing per-agent tool bindings, enabled state, handler availability, scope/approval checks and other runtime policy gates. This delivers runtime catalogue visibility, not external-tool execution or automatic agent capability matching.
+
+
+## Runtime capability observation and matching
+
+Each agent assembly records its observed capability profile with evidence labels and timestamp. `terminal` is inferred only when the assembled baseline contains `Bash`; the platform is the ARTEX runtime's `GOOS` for that terminal environment. `mcp` is recorded only for connected MCP servers that returned tools. Browser, visual-interaction and screen-capture capabilities are added only when the connected `browser` MCP returns recognized interaction/screenshot tool names. API capability is deliberately not inferred from generic HTTP or model reasoning. The latest profile is persisted per agent and used by `shared_tool_catalogue` to attach `toolregistry.MatchAgent` results to external profiles. Unknown metadata remains conditional; incompatible profiles are not presented as executable. This is planning guidance, not an external execution path or automatic permission change.
