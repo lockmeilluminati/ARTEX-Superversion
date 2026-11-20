@@ -389,6 +389,7 @@ function ToolGridCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
 
 function RegistryGridCard({ entry }: { entry: ToolRegistryRecord }) {
   const m = entry.manifest;
+  if (!m) return null;
   const source = m.canonical_repository || m.sources?.[0]?.url;
   return (
     <article className="group flex min-h-[290px] flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-xl hover:shadow-sky-950/10">
@@ -590,16 +591,16 @@ export default function ToolsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {registryEntries.filter((entry) => {
+              {registryEntries.filter((entry) => entry.source === "external").filter((entry) => {
                 const q = query.trim().toLowerCase();
                 return !q || entry.name.toLowerCase().includes(q) ||
-                  entry.manifest.description?.toLowerCase().includes(q) ||
-                  (entry.manifest.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
+                  entry.manifest?.description?.toLowerCase().includes(q) ||
+                  (entry.manifest?.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
               }).length === 0 ? (
                 <p className="text-muted-foreground py-6 text-center text-sm">{t("No registered external tools match this search.")}</p>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                  {registryEntries.filter((entry) => {
+                  {registryEntries.filter((entry) => entry.source === "external").filter((entry) => {
                     const q = query.trim().toLowerCase();
                     return !q || entry.name.toLowerCase().includes(q) ||
                       entry.manifest.description?.toLowerCase().includes(q) ||
