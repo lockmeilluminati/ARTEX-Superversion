@@ -109,3 +109,15 @@ The first Go package scaffold now lives under `integrations/`:
 - Tests: `go test ./integrations/...`
 
 This is a library scaffold, not yet wired to an ARTEX API route or UI status panel. That is intentional: the next step is to confirm the local Yakit interface and then expose health through the existing server conventions. The Go test suite has not been executed in the remote repository environment; run the command above on the laptop before the first live connection test.
+
+
+## Broader platform scaffold
+
+The roadmap's wider package boundaries are documented in [Platform Architecture](PLATFORM-ARCHITECTURE.md)
+and [Roadmap Implementation Map](ROADMAP-IMPLEMENTATION.md). Initial contracts now also exist for
+the tool registry, provenance, discovery/review, documentation drafts, normalized findings,
+execution profiles, and VEQ graph/recommendation layer.
+
+These are intentionally scaffolding contracts. They are not yet persisted, scheduled, exposed by
+server routes, or rendered in the UI. Keep ARTEX's existing approval, target-scope, egress,
+traffic and evidence paths authoritative.
