@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	acperm "github.com/Autumn-27/norma/permission"
 	actool "github.com/Autumn-27/norma/tool"
@@ -139,7 +140,15 @@ func (t *ToolSet) runIngestBbot(ctx context.Context, in json.RawMessage, tc *act
 	}
 
 	items := res.assetItems()
+	obsCtx, obsErr := newObservationContext(t.taskID, "external.bbot", a.Path, time.Now().UTC())
+	observations := []normalizer.Observation{}
+	if obsErr == nil {
+		observations = append(observations, bbotObservations(obsCtx, res.InScope, true)...)
+		observations = append(observations, bbotObservations(obsCtx, res.Intel, false)...)
+	}
 	out := map[string]any{
+		"normalized_observations": observations,
+		"normalization_warning": func() string { if obsErr != nil { return obsErr.Error() }; return "" }(),
 		"in_scope_not_asset": len(res.InScope) - len(items),
 		"skipped_lines":      res.Skipped,
 		"oversized_lines":    oversized,
