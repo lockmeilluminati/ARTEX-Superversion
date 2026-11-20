@@ -711,7 +711,7 @@ export default function ToolsPage() {
               </div>
               <div className="mb-4 rounded-lg border bg-muted/20 p-3">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <div><p className="text-sm font-medium">{t("Compare tools")}</p><p className="text-xs text-muted-foreground">{t("Choose up to three tools to compare capabilities, platforms, license, trust and readiness.")}</p></div>
+                  <div><p className="flex items-center gap-2 text-sm font-medium"><GitCompareArrowsIcon className="size-4 text-sky-500" />{t("Compare tools")}</p><p className="text-xs text-muted-foreground">{t("Choose up to three tools to compare capabilities, platforms, license, trust and readiness.")}</p></div>
                   <Badge variant="secondary">{t("{count} / 3 selected", { count: compareIDs.length })}</Badge>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">
