@@ -114,6 +114,7 @@ func (o Observation) Validate() error {
 	if strings.TrimSpace(o.SourceRunID) == "" { return errors.New("source_run_id is required") }
 	if o.TaskID <= 0 { return errors.New("task_id must be positive") }
 	if o.ObservedAt.IsZero() { return errors.New("observed_at is required") }
+	if len(o.Evidence) == 0 { return errors.New("at least one evidence reference is required") }
 	if !validScope(o.Scope) { return fmt.Errorf("invalid scope %q", o.Scope) }
 	if !validConfidence(o.Confidence) { return fmt.Errorf("invalid confidence %q", o.Confidence) }
 	if !validVerification(o.Verification) { return fmt.Errorf("invalid verification %q", o.Verification) }
@@ -199,7 +200,8 @@ func (o *Observation) AssignIDs() error {
 		Confidence Confidence `json:"confidence"`
 		Verification VerificationStatus `json:"verification"`
 		Collection CollectionStatus `json:"collection_status"`
-	}{key, o.SourceToolID, o.SourceToolVersion, o.SourceRunID, o.TaskID, o.ObservedAt.UTC().Format(time.RFC3339Nano), o.Value, o.Attributes, o.Scope, o.Confidence, o.Verification, o.Collection}
+		Evidence []EvidenceReference `json:"evidence"`
+	}{key, o.SourceToolID, o.SourceToolVersion, o.SourceRunID, o.TaskID, o.ObservedAt.UTC().Format(time.RFC3339Nano), o.Value, o.Attributes, o.Scope, o.Confidence, o.Verification, o.Collection, o.Evidence}
 	b, err := json.Marshal(canonical)
 	if err != nil { return err }
 	sum := sha256.Sum256(b)
