@@ -16,19 +16,19 @@ import (
 // registryCatalogRecord is the safe, read-only marketplace projection. It
 // deliberately excludes custom-tool execution specs and never grants a handler.
 type registryCatalogRecord struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Source      string                 `json:"source"`
-	Description string                 `json:"description,omitempty"`
-	Enabled     bool                   `json:"enabled"`
-	Kind        string                 `json:"kind,omitempty"`
-	Agents      []string               `json:"agents,omitempty"`
-	Calls       int                    `json:"calls,omitempty"`
-	Manifest    *toolregistry.Manifest `json:"manifest,omitempty"`
-	ReviewStatus string `json:"review_status"`
-	ReviewNote string `json:"review_note,omitempty"`
-	ReviewedBy string `json:"reviewed_by,omitempty"`
-	ReviewedAt *time.Time `json:"reviewed_at,omitempty"`
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	Source       string                 `json:"source"`
+	Description  string                 `json:"description,omitempty"`
+	Enabled      bool                   `json:"enabled"`
+	Kind         string                 `json:"kind,omitempty"`
+	Agents       []string               `json:"agents,omitempty"`
+	Calls        int                    `json:"calls,omitempty"`
+	Manifest     *toolregistry.Manifest `json:"manifest,omitempty"`
+	ReviewStatus string                 `json:"review_status"`
+	ReviewNote   string                 `json:"review_note,omitempty"`
+	ReviewedBy   string                 `json:"reviewed_by,omitempty"`
+	ReviewedAt   *time.Time             `json:"reviewed_at,omitempty"`
 }
 
 // pgListToolRegistry returns one catalogue containing legacy native/custom
@@ -163,7 +163,9 @@ func (s *Server) pgReviewToolRegistry(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) pgListToolRegistryReviews(w http.ResponseWriter, r *http.Request) {
 	pg := s.pg(w)
-	if pg == nil { return }
+	if pg == nil {
+		return
+	}
 	id := strings.TrimSpace(r.PathValue("id"))
 	if !strings.HasPrefix(id, "external.") {
 		writeErr(w, http.StatusBadRequest, "only external registry profiles have review history")
