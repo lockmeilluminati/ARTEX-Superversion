@@ -461,19 +461,6 @@ export default function ToolsPage() {
         <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]"><ActivityIcon className="size-3.5" /> Live catalogue data</div>
       </div>
 
-      <div className="hidden">
-        <div className="relative w-64">
-          <SearchIcon className="text-muted-foreground absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2" />
-          <Input
-            className="h-8 pl-8 text-sm"
-            placeholder={t("Search tool name, description, agent…")}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-      </div>
-      </div>
-
       <Tabs defaultValue="system">
         <TabsList>
           <TabsTrigger value="system">{t("System tools")}</TabsTrigger>
@@ -540,7 +527,7 @@ export default function ToolsPage() {
                   {query.trim() ? t("No matching custom tools") : t("(no custom tools yet; click 'Create custom tool' in the top right)")}
                 </p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {customTools.map((t) => (
                     <ToolGridCard key={t.key} tool={t} onClick={() => openTool(t)} />
                   ))}
