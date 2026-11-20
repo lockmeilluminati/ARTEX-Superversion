@@ -64,3 +64,12 @@ must use fixed schemas, explicit target scope, approval, resource limits and sui
 6. Add registry persistence through a numbered DB migration.
 7. Add provenance providers and discovery review workflow.
 8. Connect VEQ recommendations to verified manifests and existing ARTEX graph data.
+
+
+## Additional subsystem contracts
+
+The scaffold also includes repository lifecycle observations, scheduled discovery run contracts,
+citation-backed documentation source contracts, VEQ graph indexing boundaries, conservative
+execution-profile validation, Kali package-to-upstream mapping metadata, and a Yakit result/traffic
+envelope. These remain interfaces and data models until source formats and runtime ownership are
+verified.
