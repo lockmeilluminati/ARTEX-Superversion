@@ -502,6 +502,8 @@ export default function ToolsPage() {
     return (!q || searchable.includes(q)) &&
       (registryCategory === "All" || externalToolCategory(entry) === registryCategory);
   });
+  const staleCollectionToolIDs = collectionToolIDs.filter((id) => !registryEntries.some((entry) => entry.id === id));
+
   const resetCollectionForm = () => {
     setCollectionName("");
     setCollectionDescription("");
@@ -712,6 +714,19 @@ export default function ToolsPage() {
                   <Label>{t("Description")}</Label>
                   <Textarea value={collectionDescription} onChange={(event) => setCollectionDescription(event.target.value)} rows={3} placeholder={t("What is this collection for?")} />
                 </div>
+                {staleCollectionToolIDs.length > 0 && (
+                  <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+                    <p className="text-sm font-medium">{t("Unavailable catalogue entries")}</p>
+                    <p className="text-muted-foreground mt-1 text-xs">{t("These tools are no longer registered. Remove them before saving this collection.")}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {staleCollectionToolIDs.map((id) => (
+                        <Button key={id} type="button" size="sm" variant="outline" onClick={() => setCollectionToolIDs((current) => current.filter((item) => item !== id))}>
+                          {id} <Trash2Icon className="ml-1 size-3" />
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between gap-2">
                     <Label>{t("Catalogue tools")}</Label>
@@ -740,7 +755,7 @@ export default function ToolsPage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={saveCollection} disabled={savingCollection || !collectionName.trim()}>
+                  <Button onClick={saveCollection} disabled={savingCollection || !collectionName.trim() || staleCollectionToolIDs.length > 0}>
                     <SaveIcon className="mr-2 size-4" />{savingCollection ? t("Saving...") : editingCollectionID == null ? t("Create collection") : t("Save changes")}
                   </Button>
                   {editingCollectionID != null && <Button variant="outline" onClick={resetCollectionForm}>{t("Cancel edit")}</Button>}
