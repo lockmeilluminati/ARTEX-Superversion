@@ -1,10 +1,14 @@
-// Package toolregistry defines metadata contracts for tools known to ARTEX.
-// Persistence and UI integration are intentionally left for later phases.
+// Package toolregistry defines the unified metadata contract for tools known to ARTEX.
+// Execution remains owned by the existing ARTEX handlers and security gates.
 package toolregistry
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type Lifecycle string
+
 const (
 	LifecycleCandidate Lifecycle = "candidate"
 	LifecycleAvailable Lifecycle = "available"
@@ -13,7 +17,26 @@ const (
 	LifecycleQuarantined Lifecycle = "quarantined"
 )
 
+type Availability string
+
+const (
+	AvailabilityUnknown Availability = "unknown"
+	AvailabilityRegistered Availability = "registered"
+	AvailabilityPresent Availability = "present"
+	AvailabilityConnected Availability = "connected"
+)
+
+type TrustState string
+
+const (
+	TrustUnknown TrustState = "unknown"
+	TrustCodeDefined TrustState = "code_defined"
+	TrustOperatorConfigured TrustState = "operator_configured"
+	TrustExternallyVerified TrustState = "externally_verified"
+)
+
 type Permission string
+
 const (
 	PermissionDiscover Permission = "discover"
 	PermissionReadOnly Permission = "read_only"
@@ -36,6 +59,7 @@ type Dependency struct {
 
 type Manifest struct {
 	ID string `json:"id"`
+	LegacyKey string `json:"legacy_key,omitempty"`
 	Name string `json:"name"`
 	Description string `json:"description,omitempty"`
 	Version string `json:"version,omitempty"`
@@ -47,6 +71,13 @@ type Manifest struct {
 	Dependencies []Dependency `json:"dependencies,omitempty"`
 	Capabilities []string `json:"capabilities,omitempty"`
 	Permissions []Permission `json:"permissions,omitempty"`
+	AgentBindings []string `json:"agent_bindings,omitempty"`
+	ExecutionKind string `json:"execution_kind,omitempty"`
+	InputSchema json.RawMessage `json:"input_schema,omitempty"`
+	Enabled bool `json:"enabled"`
+	Availability Availability `json:"availability"`
+	Trust TrustState `json:"trust"`
+	ApprovalRequired bool `json:"approval_required"`
 	Lifecycle Lifecycle `json:"lifecycle"`
 	Verified bool `json:"verified"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
