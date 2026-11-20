@@ -32,3 +32,15 @@ Shell-kind custom tools are represented as declarations, not executable adapters
 3. Add persistence only after the metadata schema and migration semantics are reviewed.
 4. Keep execution in existing ARTEX handlers and pass all operations through existing scope,
    permission, approval, egress and evidence controls.
+
+
+## External tool records
+
+External tools live in the separate `tool_registry` table; they are not fabricated as rows in
+the legacy `tools` table and do not receive ARTEX agent bindings automatically. Migration
+`0009_tool_registry.sql` creates this table and seeds the first record, `external.yakit`.
+The JSON manifest is descriptive catalogue metadata only. It is not an executable handler.
+
+The database access layer exposes `UpsertRegistryEntry` and `ListRegistryEntries`. The
+Yakit profile is defined by `toolregistry.YakitManifest` and can be persisted explicitly with
+`toolregistry.SeedYakit`; the schema migration also seeds it for fresh/upgraded databases.
