@@ -53,7 +53,7 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 - [x] **P0 — Define mandatory tool readiness/verification metadata.** Manifest now supports installation, interface verification, verification timestamp/version, execution mode (CLI, GUI, API, MCP, hybrid), required agent capabilities and measured performance. Missing values remain unknown; listed, installed, verified, approved and operational are distinct. See docs/AGENT-TOOL-CAPABILITIES.md.
 - [x] **P0 — Show readiness state on all tool cards and external profiles.** External cards show declared execution mode, verification and installation status; native/custom cards explicitly show that mode and verification are not yet classified. Profiles show agent requirements and measured performance when available. Unknown is shown rather than guessed.
 - [~] **P1 — Add evidence-based execution/performance profiles.** Manifest and UI support sample count and median startup/run measurements; measurement collection, freshness and failure history are not yet wired.
-- [~] **P1 — Make agent-tool compatibility machine-readable.** Added AgentProfile, capability vocabulary and deterministic MatchAgent logic. Runtime assembly now persists evidence-based terminal/platform and connected-MCP/browser profiles; `shared_tool_catalogue` returns per-agent compatibility results. Remaining: run the DB-backed assembly test, validate detected names against the configured browser MCP version, and expose profile status in the operator UI.
+- [~] **P1 — Make agent-tool compatibility machine-readable.** Added AgentProfile, capability vocabulary and deterministic MatchAgent logic. Runtime assembly persists evidence-based terminal/platform and connected-MCP/browser profiles; `shared_tool_catalogue` returns per-agent compatibility results. Authenticated `GET /api/agent-capabilities` and the System → Tools → Agent capabilities view now expose timestamps/evidence. Remaining: run DB-backed assembly/API tests and validate detected names against the configured browser MCP version.
 
 ## 4. Tool collections
 
@@ -109,7 +109,7 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 The next jobs prioritize the shared agent tool ecosystem and core intelligence gathering. Marketplace work is focused on readiness and operational usefulness rather than decorative expansion.
 
 1. **P0 — Finish shared tool visibility in runtime.** Inject the shared registry snapshot into planner/worker context so all agents see the same tools, while retaining per-agent execution permissions.
-2. **P0 — Validate runtime capability profiles against live configured agents, add profile API/UI, and strengthen planner compatibility guidance.**
+2. **P0 — Validate runtime capability profiles against live configured agents and strengthen planner compatibility guidance.** Profile API/UI committed; live-instance validation and stronger planner behavior remain.
 3. **P0 — Make Yakit the first live external integration.** Verify the actual installed version and interface, then implement only supported adapter operations.
 4. **P0 — Implement Kali OS discovery.** Find tools actually installed, collect version/path/package provenance, and idempotently update the shared catalogue.
 5. **P0 — Map the existing collection pipeline.** Trace tools, parsing, asset/finding writes, provenance and UI visibility.
