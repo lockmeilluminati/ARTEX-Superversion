@@ -178,3 +178,22 @@ func (s *Server) pgListToolRegistryReviews(w http.ResponseWriter, r *http.Reques
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"reviews": reviews})
 }
+
+
+// pgListAgentCapabilities exposes the latest observed capability snapshot for
+// each assembled agent. It contains no credentials or execution configuration.
+func (s *Server) pgListAgentCapabilities(w http.ResponseWriter, r *http.Request) {
+	pg := s.pg(w)
+	if pg == nil {
+		return
+	}
+	profiles, err := pg.ListAgentCapabilityProfiles()
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, "could not load agent capability profiles")
+		return
+	}
+	if profiles == nil {
+		profiles = []db.AgentCapabilityProfile{}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"profiles": profiles})
+}
