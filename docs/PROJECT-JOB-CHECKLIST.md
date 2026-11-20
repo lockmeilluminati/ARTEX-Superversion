@@ -23,7 +23,7 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 
 - [x] Reuse the existing persistent asset model for domains, IPs, ports, services, URLs, technologies and related observations (`db/assets.go`).
 - [x] Reuse the existing exploration graph, planner/worker lineage and findings persistence (`agent/tools.go`, `db/findings.go`). This is existing ARTEX foundation, not a newly completed Superversion feature.
-- [ ] **P0 — Baseline the real collection pipeline.** Trace every current discovery/scanner tool from planner selection through execution, result parsing, asset/finding writes and UI/API visibility. Document what is genuinely wired versus merely scaffolded; identify missing collectors and duplicated paths.
+- [~] **P0 — Baseline the real collection pipeline.** Added `docs/COLLECTION-PIPELINE-BASELINE.md` with confirmed tool assembly, fact/finding persistence, asset upserts and API routes. Remaining: trace the full `insert_assets` handler/callers, enumerate scanner execution and parsers, and verify frontend visibility end-to-end.
 - [ ] **P0 — Define a canonical observation contract.** Specify normalized host, domain, IP, port, service, URL, technology and finding observations with source tool, source run/task, timestamp, raw-evidence pointer, scope, confidence and collection status. Preserve raw evidence; do not silently convert guesses into facts.
 - [ ] **P0 — Make ingestion reliable and idempotent.** Add parsers/adapters for the highest-value existing discovery outputs; validate inputs, handle partial/malformed results, deduplicate repeated observations and update last-seen/source lineage without losing history.
 - [ ] **P1 — Correlate the attack-surface graph.** Link domains↔IPs↔ports↔services↔URLs↔technologies↔findings with explainable edges and provenance. Resolve duplicates conservatively and retain conflicting observations rather than overwriting them.
@@ -112,7 +112,7 @@ The next jobs prioritize the shared agent tool ecosystem and core intelligence g
 2. **P0 — Validate runtime capability profiles against live configured agents and strengthen planner compatibility guidance.** Profile API/UI committed; live-instance validation and stronger planner behavior remain.
 3. **P0 — Make Yakit the first live external integration.** Verify the actual installed version and interface, then implement only supported adapter operations.
 4. **P0 — Implement Kali OS discovery.** Find tools actually installed, collect version/path/package provenance, and idempotently update the shared catalogue.
-5. **P0 — Map the existing collection pipeline.** Trace tools, parsing, asset/finding writes, provenance and UI visibility.
+5. **P0 — Complete the collection pipeline map.** Close the explicit gaps in `docs/COLLECTION-PIPELINE-BASELINE.md`, especially scanner command/parser inventory and the full asset-ingestion/UI trace.
 6. **P0 — Define the canonical observation/evidence contract and reliable ingestion.**
 7. **P1 — Add measured performance profiles and live registry refresh across agents.**
 8. **P1 — Correlate assets, track coverage/freshness and generate evidence-backed next actions.**
