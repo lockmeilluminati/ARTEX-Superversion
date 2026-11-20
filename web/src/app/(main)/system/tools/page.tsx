@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/sheet";
 import { t } from "@/i18n";
 import { api } from "@/lib/api";
-import type { Agent, Tool, ToolCollection, ToolRegistryRecord } from "@/lib/types";
+import type { Agent, Tool, ToolCollection, ToolRegistryRecord, ToolRegistryReview } from "@/lib/types";
 
 // Traffic tools are host tools gated by the global traffic capture switch: bindable, but
 // only usable when capture is on. Keep in sync with traffic.SeedToolMetas.
@@ -456,6 +456,9 @@ export default function ToolsPage() {
   const [collectionToolIDs, setCollectionToolIDs] = React.useState<string[]>([]);
   const [editingCollectionID, setEditingCollectionID] = React.useState<number | null>(null);
   const [savingCollection, setSavingCollection] = React.useState(false);
+  const [reviewNote, setReviewNote] = React.useState("");
+  const [reviewHistory, setReviewHistory] = React.useState<ToolRegistryReview[]>([]);
+  const [savingReview, setSavingReview] = React.useState(false);
 
   const reload = React.useCallback(() => {
     api.tools().then(setTools).catch(() => setTools([]));
@@ -467,6 +470,33 @@ export default function ToolsPage() {
     api.agents().then(setAgents).catch(() => {});
     api.settings().then((s) => setCaptureOn(!!s.traffic_capture)).catch(() => {});
   }, [reload]);
+
+  React.useEffect(() => {
+    if (!selectedRegistry) {
+      setReviewHistory([]);
+      setReviewNote("");
+      return;
+    }
+    setReviewNote(selectedRegistry.review_note ?? "");
+    api.toolRegistryReviews(selectedRegistry.id).then(setReviewHistory).catch(() => setReviewHistory([]));
+  }, [selectedRegistry?.id]);
+
+  async function saveRegistryReview(status: "pending" | "approved" | "rejected") {
+    if (!selectedRegistry) return;
+    setSavingReview(true);
+    try {
+      await api.toolRegistryReview(selectedRegistry.id, { status, note: reviewNote.trim() });
+      const refreshed = await api.toolRegistry();
+      setRegistryEntries(refreshed);
+      setSelectedRegistry(refreshed.find((entry) => entry.id === selectedRegistry.id) ?? null);
+      setReviewHistory(await api.toolRegistryReviews(selectedRegistry.id));
+      toast.success(status === "approved" ? "Profile marked as reviewed" : status === "rejected" ? "Profile review rejected" : "Review returned to pending");
+    } catch (e) {
+      toast.error(`Review update failed: ${(e as Error).message}`);
+    } finally {
+      setSavingReview(false);
+    }
+  }
 
   const [query, setQuery] = React.useState("");
 
@@ -919,6 +949,49 @@ export default function ToolsPage() {
                     {!selectedRegistry.manifest.verified && <Badge variant="outline">Not verified</Badge>}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">This profile is catalogue metadata only. It does not install or execute the tool.</p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold">Operator metadata review</h3>
+                    <Badge variant={selectedRegistry.review_status === "approved" ? "default" : selectedRegistry.review_status === "rejected" ? "destructive" : "secondary"}>
+                      {selectedRegistry.review_status || "pending"}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Review records whether the catalogue metadata was examined. Approval does not verify local installation, enable the tool, install binaries, grant permissions, or authorize execution.
+                  </p>
+                  <div className="mt-3 grid gap-2">
+                    <Label htmlFor="registry-review-note" className="text-xs">Review note {selectedRegistry.review_status === "rejected" ? "(required for rejection)" : "(optional)"}</Label>
+                    <Textarea id="registry-review-note" rows={3} maxLength={2000} value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} placeholder="Record what was checked, outstanding evidence, or why this profile was rejected." />
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => saveRegistryReview("approved")} disabled={savingReview}>Mark metadata reviewed</Button>
+                      <Button size="sm" variant="destructive" onClick={() => saveRegistryReview("rejected")} disabled={savingReview || !reviewNote.trim()}>Reject profile</Button>
+                      <Button size="sm" variant="outline" onClick={() => saveRegistryReview("pending")} disabled={savingReview}>Return to pending</Button>
+                    </div>
+                  </div>
+                  {selectedRegistry.reviewed_by && (
+                    <p className="mt-3 text-[11px] text-muted-foreground">
+                      Latest decision by {selectedRegistry.reviewed_by}
+                      {selectedRegistry.reviewed_at ? ` · ${new Date(selectedRegistry.reviewed_at).toLocaleString()}` : ""}
+                    </p>
+                  )}
+                  <div className="mt-4 border-t pt-3">
+                    <h4 className="mb-2 text-xs font-semibold">Review history</h4>
+                    {reviewHistory.length === 0 ? <p className="text-xs text-muted-foreground">No decisions recorded yet.</p> : (
+                      <div className="space-y-2">
+                        {reviewHistory.map((review) => (
+                          <div key={review.id} className="rounded-md bg-muted/40 p-2 text-xs">
+                            <div className="flex flex-wrap justify-between gap-2">
+                              <span className="font-medium capitalize">{review.status}</span>
+                              <span className="text-muted-foreground">{new Date(review.reviewed_at).toLocaleString()}</span>
+                            </div>
+                            <p className="mt-1 text-muted-foreground">By {review.reviewed_by}</p>
+                            {review.note && <p className="mt-1 whitespace-pre-wrap">{review.note}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {(selectedRegistry.manifest.canonical_repository || selectedRegistry.manifest.sources?.[0]?.url) && (
                   <a className="inline-flex text-sm text-sky-500 hover:underline" href={selectedRegistry.manifest.canonical_repository || selectedRegistry.manifest.sources?.[0]?.url} target="_blank" rel="noreferrer">Open official source ↗</a>
