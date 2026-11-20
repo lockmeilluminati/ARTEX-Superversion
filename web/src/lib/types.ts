@@ -1388,6 +1388,15 @@ export interface ToolCollection {
   updated_at: string;
 }
 
+export interface ToolRegistryReview {
+  id: number;
+  registry_id: string;
+  status: "pending" | "approved" | "rejected";
+  note: string;
+  reviewed_by: string;
+  reviewed_at: string;
+}
+
 export interface ToolRegistryRecord {
   id: string;
   name: string;
@@ -1397,6 +1406,10 @@ export interface ToolRegistryRecord {
   kind?: string;
   agents?: string[];
   calls?: number;
+  review_status?: "pending" | "approved" | "rejected";
+  review_note?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
   manifest?: {
     id: string;
     legacy_key?: string;
