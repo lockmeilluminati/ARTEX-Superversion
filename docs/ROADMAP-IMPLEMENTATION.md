@@ -1,6 +1,8 @@
 # ARTEX-Superversion — Implementation Roadmap
 
-ARTEX-Superversion is a shared intelligence and tool-orchestration platform. Its agents share one live tool catalogue, understand how tools are operated, and select compatible tools/agents based on verified capabilities. Yakit is the first live external integration; Kali OS is the first broad local tool-discovery source. Marketplace cards expose truthful readiness and verification state.
+ARTEX-Superversion is being developed as a shared intelligence and tool-orchestration platform. The target architecture gives every agent one live tool catalogue, describes how tools are operated, and selects compatible tool/agent pairs based on declared and verified capabilities. Yakit is the first intended live external integration; Kali OS is the first broad local tool-discovery source. Marketplace cards expose truthful readiness and verification state.
+
+Current implementation slice: the existing catalogue API combines native/custom runtime tool metadata with external manifests for the marketplace. Manifest readiness fields, marketplace status display and a deterministic agent capability matcher are now committed. Runtime injection of the shared catalogue, persisted/live agent capability profiles, Yakit connectivity/adapter and Kali discovery remain unimplemented.
 
 ## Priority 0 — Shared tool ecosystem and first integrations
 
