@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/sheet";
 import { t } from "@/i18n";
 import { api } from "@/lib/api";
-import type { Agent, Tool, ToolCollection, ToolRegistryRecord, ToolRegistryReview } from "@/lib/types";
+import type { Agent, AgentCapabilityProfile, Tool, ToolCollection, ToolRegistryRecord, ToolRegistryReview } from "@/lib/types";
 
 // Traffic tools are host tools gated by the global traffic capture switch: bindable, but
 // only usable when capture is on. Keep in sync with traffic.SeedToolMetas.
@@ -450,6 +450,7 @@ export default function ToolsPage() {
   const [tools, setTools] = React.useState<Tool[]>([]);
   const [registryEntries, setRegistryEntries] = React.useState<ToolRegistryRecord[]>([]);
   const [agents, setAgents] = React.useState<Agent[]>([]);
+  const [agentProfiles, setAgentProfiles] = React.useState<AgentCapabilityProfile[]>([]);
   const [captureOn, setCaptureOn] = React.useState(false);
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [customEdit, setCustomEdit] = React.useState<Tool | "new" | null>(null);
@@ -470,6 +471,7 @@ export default function ToolsPage() {
   const reload = React.useCallback(() => {
     api.tools().then(setTools).catch(() => setTools([]));
     api.toolRegistry().then(setRegistryEntries).catch(() => setRegistryEntries([]));
+    api.agentCapabilities().then(setAgentProfiles).catch(() => setAgentProfiles([]));
     api.toolCollections().then(setCollections).catch(() => setCollections([]));
   }, []);
   React.useEffect(() => {
@@ -646,6 +648,7 @@ export default function ToolsPage() {
           <TabsTrigger value="custom">{t("Custom tools")}</TabsTrigger>
           <TabsTrigger value="ecosystem">{t("External ecosystem")} ({registryEntries.filter((entry) => entry.source === "external").length})</TabsTrigger>
           <TabsTrigger value="collections">{t("Collections")} ({collections.length})</TabsTrigger>
+          <TabsTrigger value="agents">{t("Agent capabilities")} ({agentProfiles.length}/{agents.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="system">
@@ -789,6 +792,43 @@ export default function ToolsPage() {
                   {sortedExternalEntries.map((entry) => <RegistryGridCard key={entry.id} entry={entry} onSelect={setSelectedRegistry} />)}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="agents">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("Runtime agent capability profiles")}</CardTitle>
+              <CardDescription>{t("Observed from assembled tools and connected MCP servers. These profiles help agents assess compatibility; they do not grant tool access or execution permission.")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {agents.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">{t("No agents are currently registered.")}</p>
+              ) : (
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {agents.map((agent) => {
+                    const profile = agentProfiles.find((item) => item.agent_key === agent.key);
+                    return (
+                      <div key={agent.key} className="rounded-lg border p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div><h3 className="text-sm font-semibold">{agent.name}</h3><p className="font-mono text-xs text-muted-foreground">{agent.key}</p></div>
+                          <Badge variant={profile ? "secondary" : "outline"}>{profile ? t("Observed") : t("Not observed")}</Badge>
+                        </div>
+                        {profile ? (
+                          <>
+                            <div className="mt-3"><p className="mb-1 text-xs font-medium text-muted-foreground">{t("Capabilities")}</p><div className="flex flex-wrap gap-1.5">{profile.capabilities.length ? profile.capabilities.map((capability) => <Badge key={capability} variant="outline">{capability.replaceAll("_", " ")}</Badge>) : <span className="text-xs text-muted-foreground">{t("None observed")}</span>}</div></div>
+                            <div className="mt-3"><p className="mb-1 text-xs font-medium text-muted-foreground">{t("Runtime platforms")}</p><div className="flex flex-wrap gap-1.5">{profile.platforms.length ? profile.platforms.map((platform) => <Badge key={platform} variant="outline">{platform}</Badge>) : <span className="text-xs text-muted-foreground">{t("Unknown")}</span>}</div></div>
+                            <p className="mt-3 text-[11px] text-muted-foreground">{t("Last observed")}: {new Date(profile.observed_at).toLocaleString()}</p>
+                            <details className="mt-3"><summary className="cursor-pointer text-xs font-medium">{t("Observation evidence")} ({profile.evidence.length})</summary><ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-muted-foreground">{profile.evidence.map((item) => <li key={item} className="break-all font-mono">{item}</li>)}</ul></details>
+                          </>
+                        ) : <p className="mt-3 text-xs text-muted-foreground">{t("No runtime snapshot has been recorded yet. The profile appears after this agent's tools are assembled; unknown capabilities remain unknown.")}</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="mt-4 rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">{t("Compatibility is advisory only. Installation, verification, enablement, per-agent bindings, scope checks and approval remain separate controls.")}</p>
             </CardContent>
           </Card>
         </TabsContent>
