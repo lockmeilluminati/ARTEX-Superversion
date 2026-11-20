@@ -387,12 +387,12 @@ function ToolGridCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
   );
 }
 
-function RegistryGridCard({ entry }: { entry: ToolRegistryRecord }) {
+function RegistryGridCard({ entry, onSelect }: { entry: ToolRegistryRecord; onSelect: (entry: ToolRegistryRecord) => void }) {
   const m = entry.manifest;
   if (!m) return null;
   const source = m.canonical_repository || m.sources?.[0]?.url;
   return (
-    <article className="group flex min-h-[290px] flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-xl hover:shadow-sky-950/10">
+    <button type="button" onClick={() => onSelect(entry)} className="group flex min-h-[290px] w-full flex-col overflow-hidden rounded-xl border border-border/70 bg-card text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-sky-500/50 hover:shadow-xl hover:shadow-sky-950/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       <div className="relative flex h-32 items-center justify-between overflow-hidden border-b border-white/10 bg-[radial-gradient(ellipse_at_75%_20%,rgba(14,165,233,0.25),transparent_48%),linear-gradient(135deg,#07111f,#101d32_55%,#111827)] px-5">
         <div className="absolute -right-5 -top-12 size-44 rounded-full border border-sky-300/15" />
         <div className="absolute -right-1 -top-6 size-32 rounded-full border border-sky-300/10" />
@@ -422,11 +422,20 @@ function RegistryGridCard({ entry }: { entry: ToolRegistryRecord }) {
         </div>
         <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
           <span className="truncate">{[m.license, m.version].filter(Boolean).join(" · ") || "License/version not verified"}</span>
-          {source ? <a href={source} target="_blank" rel="noreferrer" className="shrink-0 text-sky-500 hover:underline">Source ↗</a> : <span>Source pending</span>}
+          <span className="shrink-0 text-sky-500">{source ? "View profile ↗" : "Profile ↗"}</span>
         </div>
       </div>
-    </article>
+    </button>
   );
+}
+
+function externalToolCategory(entry: ToolRegistryRecord): string {
+  const text = [entry.name, entry.description, ...(entry.manifest?.capabilities ?? [])].join(" ").toLowerCase();
+  if (/recon|discover|nmap|scan|asset|subdomain/.test(text)) return "Reconnaissance";
+  if (/web|http|request|proxy|browser|xss|sql|api/.test(text)) return "Web security";
+  if (/traffic|packet|network|tcp|udp|dns/.test(text)) return "Network analysis";
+  if (/forensic|evidence|incident|malware/.test(text)) return "Forensics";
+  return "Other";
 }
 
 export default function ToolsPage() {
@@ -436,6 +445,8 @@ export default function ToolsPage() {
   const [captureOn, setCaptureOn] = React.useState(false);
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [customEdit, setCustomEdit] = React.useState<Tool | "new" | null>(null);
+  const [selectedRegistry, setSelectedRegistry] = React.useState<ToolRegistryRecord | null>(null);
+  const [registryCategory, setRegistryCategory] = React.useState("All");
 
   const reload = React.useCallback(() => {
     api.tools().then(setTools).catch(() => setTools([]));
@@ -591,21 +602,32 @@ export default function ToolsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {["All", "Reconnaissance", "Web security", "Network analysis", "Forensics", "Other"].map((category) => (
+                  <Button key={category} type="button" size="sm" variant={registryCategory === category ? "default" : "outline"} onClick={() => setRegistryCategory(category)}>
+                    {category}
+                  </Button>
+                ))}
+              </div>
               {registryEntries.filter((entry) => entry.source === "external").filter((entry) => {
                 const q = query.trim().toLowerCase();
-                return !q || entry.name.toLowerCase().includes(q) ||
+                const matchesQuery = !q || entry.name.toLowerCase().includes(q) ||
                   entry.manifest?.description?.toLowerCase().includes(q) ||
                   (entry.manifest?.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
+                const matchesCategory = registryCategory === "All" || externalToolCategory(entry) === registryCategory;
+                return matchesQuery && matchesCategory;
               }).length === 0 ? (
                 <p className="text-muted-foreground py-6 text-center text-sm">{t("No registered external tools match this search.")}</p>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {registryEntries.filter((entry) => entry.source === "external").filter((entry) => {
                     const q = query.trim().toLowerCase();
-                    return !q || entry.name.toLowerCase().includes(q) ||
+                    const matchesQuery = !q || entry.name.toLowerCase().includes(q) ||
                       entry.manifest?.description?.toLowerCase().includes(q) ||
                       (entry.manifest?.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
-                  }).map((entry) => <RegistryGridCard key={entry.id} entry={entry} />)}
+                    const matchesCategory = registryCategory === "All" || externalToolCategory(entry) === registryCategory;
+                    return matchesQuery && matchesCategory;
+                  }).map((entry) => <RegistryGridCard key={entry.id} entry={entry} onSelect={setSelectedRegistry} />)}
                 </div>
               )}
             </CardContent>
@@ -632,6 +654,60 @@ export default function ToolsPage() {
                 onSaved={reload}
                 onClose={() => setSelectedKey(null)}
               />
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={!!selectedRegistry} onOpenChange={(open) => !open && setSelectedRegistry(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl">
+          {selectedRegistry?.manifest && (
+            <>
+              <SheetHeader>
+                <SheetTitle>{selectedRegistry.name}</SheetTitle>
+                <SheetDescription>{selectedRegistry.manifest.description || "External tool profile awaiting operator verification."}</SheetDescription>
+              </SheetHeader>
+              <div className="space-y-5 px-4 pb-6">
+                <div className="rounded-xl border border-sky-500/20 bg-[radial-gradient(ellipse_at_85%_0%,rgba(14,165,233,0.18),transparent_50%),linear-gradient(120deg,#07111f,#111c2d)] p-5 text-white">
+                  <div className="text-xs uppercase tracking-[0.18em] text-sky-200">External tool profile</div>
+                  <div className="mt-2 text-xl font-semibold">{selectedRegistry.name}</div>
+                  <div className="mt-1 text-xs text-slate-300">{externalToolCategory(selectedRegistry)}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    ["Lifecycle", selectedRegistry.manifest.lifecycle],
+                    ["Availability", selectedRegistry.manifest.availability],
+                    ["Trust", selectedRegistry.manifest.trust],
+                    ["Execution", selectedRegistry.manifest.execution_kind || "Not configured"],
+                    ["License", selectedRegistry.manifest.license || "Not verified"],
+                    ["Maintainer", selectedRegistry.manifest.maintainer || "Not listed"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-lg border p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+                      <div className="mt-1 break-words text-sm font-medium">{value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold">Specialties</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(selectedRegistry.manifest.capabilities ?? []).map((item) => <Badge key={item} variant="outline">{item.replaceAll("_", " ")}</Badge>)}
+                    {!(selectedRegistry.manifest.capabilities ?? []).length && <p className="text-xs text-muted-foreground">Capabilities have not been verified yet.</p>}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold">Permissions and safeguards</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(selectedRegistry.manifest.permissions ?? []).map((item) => <Badge key={item} variant="secondary">{item.replaceAll("_", " ")}</Badge>)}
+                    {selectedRegistry.manifest.approval_required && <Badge variant="outline">Operator approval required</Badge>}
+                    {!selectedRegistry.manifest.verified && <Badge variant="outline">Not verified</Badge>}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">This profile is catalogue metadata only. It does not install or execute the tool.</p>
+                </div>
+                {(selectedRegistry.manifest.canonical_repository || selectedRegistry.manifest.sources?.[0]?.url) && (
+                  <a className="inline-flex text-sm text-sky-500 hover:underline" href={selectedRegistry.manifest.canonical_repository || selectedRegistry.manifest.sources?.[0]?.url} target="_blank" rel="noreferrer">Open official source ↗</a>
+                )}
+              </div>
             </>
           )}
         </SheetContent>
