@@ -76,14 +76,14 @@ Last reviewed: 2026-11-20
 - [ ] Run go vet ./....
 - [ ] Run frontend lint and production build from web/.
 - [ ] Apply database migrations against a clean test database and an upgrade database.
-- [ ] Add CI coverage for Go tests/build/vet, frontend lint/build and migration checks.
+- [~] CI workflow already runs Go formatting/build/vet/tests, frontend typecheck/tests/static build and SQL index-script checks; frontend lint was added in commit 91a59ad223db938b35b289163f729199c4932dc3. Confirm a successful run and add dedicated migration upgrade checks.
 - [ ] Review API authentication/authorization for all new registry and collection routes.
 - [ ] Perform a final security review of external-tool configuration, execution gates, secrets and audit trails.
 - [ ] Update README and operator documentation to distinguish implemented, tested, configured and verified capabilities.
 
 ## Current next-up sequence
 
-1. Validate the current branch: run Go formatting/tests/build/vet and frontend lint/build; fix any failures.
+1. Validate the current branch through CI: Go formatting/tests/build/vet and frontend lint/typecheck/build are configured; confirm a successful run and fix any failures.
 2. Finish tool collections: implement authenticated API routes, frontend management and tests.
 3. Add verified marketplace artwork and sorting/comparison.
 4. Expand the catalogue with evidence-backed tool profiles.
