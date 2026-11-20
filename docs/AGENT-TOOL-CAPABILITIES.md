@@ -62,3 +62,6 @@ Each agent assembly records its observed capability profile with evidence labels
 ## Operator capability view
 
 The authenticated `GET /api/agent-capabilities` endpoint returns the latest persisted snapshots without execution configuration or secrets. The System → Tools → Agent capabilities tab shows each configured agent's observed capabilities, runtime platforms, timestamp and evidence labels. Agents without a snapshot are explicitly shown as not observed; the UI does not infer missing capabilities. The view is descriptive and does not alter tool bindings or permissions.
+
+
+Planner guidance is explicit: use `compatible` as a planning filter, treat `conditional` as requiring operator/environment verification, and treat `incompatible` as unsuitable for that agent. Compatibility is then checked separately from installation, verification, enablement, approval and agent binding. A catalogue entry is callable only when it is explicitly present in the agent's actual callable-tool list.
