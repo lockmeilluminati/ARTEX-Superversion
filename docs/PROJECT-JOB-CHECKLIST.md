@@ -106,19 +106,31 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 
 ## Current next-up sequence
 
-The contract schema and identity rules are now committed. The immediate next job is to validate the contract against the actual scanner parsers and existing database model before introducing any persistence migration.
+The canonical observation schema and first parser projections are committed. The next job is operational verification; no local tests or GitHub Actions runs have yet been confirmed for this checkpoint.
 
-1. **P0 — Validate and integrate the canonical observation contract.** Run `go test ./normalizer`; add adapter mapping from Nmap/httpx/Nuclei/BBot parser results into `normalizer.Observation`; verify stable IDs, evidence references, scope and collection states with fixtures. Review the proposed append-only claim-link migration against current asset/evidence/finding schemas before applying it.
-2. **P0 — Verify the collection pipeline operationally.** Confirm local scanner binary availability and command → output file → worker parser → persistence, run parser/DB fixtures, and validate asset UI refresh as detailed in `docs/COLLECTION-PIPELINE-BASELINE.md`.
-3. **P0 — Make ingestion reliable and idempotent against the agreed contract.** Add/adjust adapters, partial/malformed handling, deduplication and source lineage without losing history.
+### Readiness checkpoint (2026-11-20)
+
+- GitHub Actions: the repository Actions API currently reports **zero workflow runs**. The CI workflow is defined, but there is no passing CI result to rely on.
+- Local Go tests/build: not run. A source checkout could not be obtained in this execution environment because GitHub DNS/network access was unavailable.
+- Marketplace: the tool-registry API, marketplace UI, collections and review controls are present in source. They remain **implemented but unverified**; external tool profiles are metadata-only and do not install or execute tools.
+- Regular application: the existing application source and CI build steps remain present, but a fresh build has not been demonstrated in this checkpoint.
+- Observation adapters: return normalized projections alongside existing writes; they do not yet persist canonical observation claims. The current run/evidence identifiers are explicitly provisional.
+
+### Current next-up sequence
+
+1. **P0 — Verify the collection pipeline operationally (NEXT).** Run `go test ./normalizer ./agent`, then the full Go build/test/vet suite; validate scanner binaries and versions; exercise command → output → parser → adapter → existing DB writes; verify asset UI refresh.
+2. **P0 — Complete observation provenance and persistence design.** Replace ingestion-attempt IDs with actual execution IDs where available; replace basename evidence hints with immutable evidence-store references/digests; review the proposed claim-link mapping against existing DB schemas. Do not apply a migration until evidence storage and lineage are verified.
+3. **P0 — Make ingestion reliable and idempotent.** Cover malformed, partial, truncated and replayed files; ensure deduplication preserves conflicting claims and updates last-seen/source lineage correctly.
 4. **P1 — Correlate the attack-surface graph.** Add explainable links with provenance and retain contradictory observations.
 5. **P1 — Build collection coverage intelligence.** Distinguish not-tested, tested-negative, partial and failed collection.
 6. **P1 — Add evidence-backed enrichment and safe next-collection recommendations.**
-7. **P0 — Validate runtime capability profiles against live configured agents.** Profile persistence, authenticated API, operator UI and explicit planner compatibility rules are committed; live-instance validation and DB-backed tests remain.
+7. **P0 — Validate runtime capability profiles against live configured agents.** Profiles, authenticated API and operator UI are committed; live-instance validation and DB-backed tests remain.
 8. **P0 — Make Yakit the first live external integration.** Verify the actual installed version and interface before implementing supported adapter operations.
 9. **P0 — Implement Kali OS discovery.** Discover installed tools and collect version/path/package provenance; do not infer installation from catalogue metadata.
 10. **P2 — Improve recon orchestration, operator intelligence views and VEQ.**
-11. **Maintenance:** validate marketplace, collections and review workflow; continue only necessary defects/security fixes.
+11. **Maintenance — Validate marketplace, collections and review workflow.** Fix defects/security issues; no further feature expansion until intelligence milestones progress.
+
+There are **10 substantive jobs remaining** in this sequence, plus ongoing maintenance. This is a work-plan count, not a delivery estimate; several jobs contain multiple implementation and validation steps.
 
 ## Status reporting rules
 
