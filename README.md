@@ -1,43 +1,175 @@
 <div align="center">
 
-<img src="web/public/logo.svg" width="84" alt="ARTEX logo" />
+<img src="web/public/logo.svg" width="92" alt="ARTEX logo" />
 
-# ARTEX
+# ARTEX // SUPERVERSION
 
-**Autonomous penetration testing that keeps its receipts.**
+### The open, extensible security operations intelligence platform
 
-(upstream: [Autumn-27/ARTEX](https://github.com/Autumn-27), AGPL-3.0)
+**One orchestration core. A connected tool ecosystem. Verifiable intelligence.**
 
-Self-hosted multi-agent offensive security. A planner explores, workers run real tools,
-and every finding stays bound to the assets and HTTP traffic that prove it.
+A community-driven evolution of ARTEX that aims to connect autonomous security workflows with
+Yakit, Kali Linux, and the wider open-source security ecosystem — while keeping tool provenance,
+evidence, authorization, and human oversight at the center.
 
-[![Release](https://img.shields.io/github/v/release/BaaRai/ARTEX?label=release&color=6b34db)](https://github.com/BaaRai/ARTEX/releases)
-[![License](https://img.shields.io/github/license/BaaRai/ARTEX?color=6b34db)](LICENSE)
-[![CI](https://github.com/BaaRai/ARTEX/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/BaaRai/ARTEX/actions/workflows/ci.yml)
-[![Go](https://img.shields.io/github/go-mod/go-version/BaaRai/ARTEX?color=6b34db)](go.mod)
+[![License](https://img.shields.io/github/license/lockmeilluminati/ARTEX-Superversion?color=6b34db)](LICENSE)
+[![CI](https://github.com/lockmeilluminati/ARTEX-Superversion/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lockmeilluminati/ARTEX-Superversion/actions)
+[![Go](https://img.shields.io/github/go-mod/go-version/lockmeilluminati/ARTEX-Superversion?color=6b34db)](go.mod)
+[![Based on BaaRai ARTEX](https://img.shields.io/badge/base-BaaRai%20ARTEX-6b34db)](https://github.com/BaaRai/ARTEX)
 
-[Quick start](#quick-start) · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Install](#installation) · [Configuration](#configuration) · [Security](SECURITY.md)
+[Vision](#the-vision) · [Roadmap](#the-roadmap) · [Architecture](#planned-ecosystem-architecture) · [Quick start](#quick-start) · [Security](#security) · [Contributing](#contributing)
 
 </div>
 
 ---
 
-ARTEX is a self-hosted, LLM-driven penetration testing platform. It is not a chat wrapper around
-a scanner: a planner splits a goal into intents, workers execute them with real tools, and the
-results are written back into **two linked graphs**: one for what you know about the target, one
-for how the test is progressing. Every finding can carry the captured request and response that
-justify it, and every autonomous action passes through scope rules, approval gates and budgets.
+> **Project status:** This is an active fork and an ambitious roadmap. The ARTEX capabilities described
+> in the inherited codebase are distinct from the integrations and platform features listed below,
+> which are planned until they are implemented, tested, and documented.
 
-- **It explores, it doesn't chat.** Goal decomposition, intent dispatch, worker execution and
-  write-back form a closed loop that keeps advancing until the goal is proven.
-- **Two graphs, one audit trail.** The shared asset graph says *what exists*; the per-task
-  exploration graph says *what was tried, what it produced, and why*. Anchors link the two.
-- **Findings with evidence.** A recording MITM proxy and a browser extension capture real traffic;
-  findings, evidence quotes and retests are tied to the exact request/response.
-- **Autonomy with brakes.** Human-in-the-loop approvals, argv-prefix rules, scope/deny gates,
-  token and turn budgets, a target noise governor, and prompt-injection framing on tool output.
-- **Self-hosted and model-agnostic.** One Go binary with the Next.js UI embedded, PostgreSQL,
-  your own Anthropic/OpenAI-compatible endpoint, or a local Ollama.
+## The vision
+
+ARTEX-Superversion is intended to become a modular security operations platform that can discover,
+organize, orchestrate, and explain a broad ecosystem of authorized security-testing tools.
+
+Rather than hard-coding every scanner or utility into one application, the long-term design is a
+**tool intelligence layer**: each integration has a known source, version, license, dependencies,
+compatibility profile, documentation, permissions, and execution history. ARTEX remains the
+orchestration and evidence layer; specialist tools remain independently versioned components.
+
+### What we are building toward
+
+| Pillar | Direction |
+| --- | --- |
+| **ARTEX engine** | Preserve and strengthen the existing multi-agent planner, workers, dual graphs, evidence capture, and approval controls. |
+| **Yakit connectivity** | Develop an adapter for Yakit workflows, HTTP inspection, traffic evidence, and compatible results. |
+| **Kali ecosystem** | Discover and manage selected Kali tools through a versioned, permission-aware integration layer. |
+| **Tool intelligence** | Find new tools, releases, repositories, forks, advisories, and documentation across trusted sources. |
+| **Provenance & history** | Record original authors, canonical repositories, commit ancestry, release dates, licenses, forks, renames, archives, and deletion signals. |
+| **Living documentation** | Generate and maintain tool profiles, installation notes, compatibility data, examples, and source references. |
+| **VEQ intelligence layer** | Help coordinate agents, recommend suitable tools, connect findings to evidence, and build a searchable knowledge graph. |
+
+## The roadmap
+
+The roadmap is deliberately staged. We will build a dependable foundation before enabling broad automatic discovery or execution.
+
+### Phase 1 — Foundation & trust
+
+- [ ] Establish a clean, reproducible baseline from the inherited ARTEX code.
+- [ ] Record the exact upstream source, inherited license, and fork lineage.
+- [ ] Run build, test, dependency, and security checks on a clean environment.
+- [ ] Document the current architecture, trust boundaries, configuration, and operational model.
+- [ ] Create a versioned integration contract for external tools.
+
+### Phase 2 — Unified tool registry
+
+- [ ] Define a common tool manifest: name, description, source, version, license, maintainer, dependencies, platforms, install method, capabilities, and permissions.
+- [ ] Add a searchable registry for installed, available, deprecated, and quarantined tools.
+- [ ] Track provenance: canonical repository, original uploader/maintainer, first-seen date, release dates, commit ancestry, and verification confidence.
+- [ ] Track repository lifecycle events: renamed, transferred, archived, made private, deleted, or restored where observable.
+- [ ] Preserve source snapshots and metadata where legally and technically possible.
+
+### Phase 3 — Yakit integration
+
+- [ ] Design a maintained Yakit adapter rather than tightly coupling its internals to ARTEX.
+- [ ] Map supported Yakit capabilities into the common tool registry.
+- [ ] Normalize compatible outputs into ARTEX assets, evidence, and findings.
+- [ ] Connect HTTP traffic and request/response evidence where supported.
+- [ ] Add integration health checks and compatibility tests.
+
+### Phase 4 — Kali Linux tool ecosystem
+
+- [ ] Inventory Kali tool packages and their authoritative package metadata.
+- [ ] Match tools to canonical upstream projects and document source confidence.
+- [ ] Build isolated installation and execution profiles.
+- [ ] Track package versions, upstream versions, dependencies, and compatibility.
+- [ ] Support explicit allowlists and per-tool permission policies.
+- [ ] Start with a small, tested set of integrations before expanding coverage.
+
+### Phase 5 — Automated discovery & documentation
+
+- [ ] Periodically discover candidate tools, repositories, releases, and security advisories.
+- [ ] Compare repository identity, maintainers, commit history, tags, and release metadata.
+- [ ] Detect likely duplicates, forks, abandoned projects, and suspicious source changes.
+- [ ] Collect official documentation and generate a draft tool profile.
+- [ ] Require review before a new tool is trusted, installed, or made executable.
+- [ ] Show exactly where every discovered fact came from and when it was observed.
+
+### Phase 6 — VEQ orchestration & intelligence
+
+- [ ] Recommend tools based on task requirements, platform compatibility, and verified capabilities.
+- [ ] Coordinate ARTEX agents with approved external tool adapters.
+- [ ] Link tool runs, assets, requests, responses, findings, and retests into an auditable history.
+- [ ] Build a searchable knowledge graph of tools, versions, sources, techniques, and evidence.
+- [ ] Add dashboards for discovery, updates, integration health, and review queues.
+
+### Phase 7 — Hardening & release
+
+- [ ] Add end-to-end tests for integrations and tool lifecycle events.
+- [ ] Publish reproducible builds, dependency inventories, and release notes.
+- [ ] Define support policies for tool versions and platform compatibility.
+- [ ] Complete security review before enabling higher-autonomy workflows.
+
+<details>
+<summary><strong>What “automatic” means in this project</strong></summary>
+
+Discovery can be automated; trust must be earned. A newly discovered repository is initially an
+**unverified candidate**, not an approved executable. The system should collect metadata, compare
+provenance, inspect licenses and dependencies, generate documentation, and present a review record.
+Installation and execution require explicit policy approval and appropriately scoped permissions.
+
+</details>
+
+## Planned ecosystem architecture
+
+The intended design separates orchestration from integrations and discovery:
+
+```mermaid
+flowchart TB
+  USER["Operator / authorized assessment scope"]
+  UI["ARTEX-Superversion UI"]
+  CORE["ARTEX orchestration core"]
+  GRAPH["Assets · tasks · evidence · findings"]
+  POLICY["Scope · approvals · budgets · audit"]
+  ADAPTERS["Tool adapter layer"]
+  YAKIT["Yakit integration"]
+  KALI["Kali tool integrations"]
+  OTHER["Other approved tools"]
+  DISCOVERY["Tool discovery service"]
+  SOURCES["Git repositories · releases · package indexes · advisories · docs"]
+  REGISTRY["Tool registry & provenance ledger"]
+  DOCS["Generated documentation & review queue"]
+  VEQ["VEQ intelligence layer"]
+
+  USER --> UI --> CORE
+  CORE <--> GRAPH
+  CORE <--> POLICY
+  CORE --> ADAPTERS
+  ADAPTERS --> YAKIT
+  ADAPTERS --> KALI
+  ADAPTERS --> OTHER
+  SOURCES --> DISCOVERY --> REGISTRY
+  REGISTRY --> DOCS
+  REGISTRY --> ADAPTERS
+  GRAPH <--> VEQ
+  REGISTRY <--> VEQ
+```
+
+**Design principles**
+
+1. **Adapters, not entanglement.** Integrations should be independently testable and replaceable.
+2. **Provenance by default.** Every tool record should point to its source and the evidence supporting its identity and version.
+3. **Human control.** Discovery does not imply permission to install or execute.
+4. **Least privilege.** Tools run with explicit scope, permissions, resource limits, and isolation appropriate to their risk.
+5. **Evidence over assertion.** Findings should link to the requests, responses, outputs, and events that support them.
+6. **Reproducibility.** Pin versions and record environment details so results can be repeated.
+7. **Open ecosystem.** Prefer documented interfaces and upstream contributions over private, fragile patches.
+
+## Project identity & lineage
+
+This repository is a fork of [BaaRai/ARTEX](https://github.com/BaaRai/ARTEX), itself an English-language continuation of ARTEX originally associated with [Autumn-27](https://github.com/Autumn-27). The upstream project history and license notices must remain respected.
+
+Our additions will be documented separately in the changelog, and meaningful changes should retain clear attribution. This project currently inherits the **GNU Affero General Public License v3.0 (AGPL-3.0)**; see [LICENSE](LICENSE). Review license obligations before redistributing modified versions or offering the software as a network service.
 
 ---
 
