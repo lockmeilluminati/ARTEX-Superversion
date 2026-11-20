@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { ActivityIcon, ArrowUpRightIcon, BoxesIcon, GlobeIcon, NetworkIcon, PlayIcon, PlusIcon, RadarIcon, RotateCcwIcon, SaveIcon, SearchIcon, ShieldCheckIcon, TerminalSquareIcon, Trash2Icon, WorkflowIcon } from "lucide-react";
+import { ActivityIcon, ArrowUpRightIcon, BoxesIcon, GlobeIcon, NetworkIcon, PlayIcon, PlusIcon, RadarIcon, RotateCcwIcon, SaveIcon, SearchIcon, ShieldCheckIcon, TerminalSquareIcon, Trash2Icon, WorkflowIcon, GitCompareArrowsIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -448,6 +448,8 @@ export default function ToolsPage() {
   const [customEdit, setCustomEdit] = React.useState<Tool | "new" | null>(null);
   const [selectedRegistry, setSelectedRegistry] = React.useState<ToolRegistryRecord | null>(null);
   const [registryCategory, setRegistryCategory] = React.useState("All");
+  const [registrySort, setRegistrySort] = React.useState("name");
+  const [compareIDs, setCompareIDs] = React.useState<string[]>([]);
   const [collections, setCollections] = React.useState<ToolCollection[]>([]);
   const [collectionName, setCollectionName] = React.useState("");
   const [collectionDescription, setCollectionDescription] = React.useState("");
@@ -502,6 +504,14 @@ export default function ToolsPage() {
     return (!q || searchable.includes(q)) &&
       (registryCategory === "All" || externalToolCategory(entry) === registryCategory);
   });
+  const sortedExternalEntries = [...filteredExternalEntries].sort((a, b) => {
+    if (registrySort === "verified") return Number(!!b.manifest?.verified) - Number(!!a.manifest?.verified) || a.name.localeCompare(b.name);
+    if (registrySort === "trust") return (a.manifest?.trust ?? "unknown").localeCompare(b.manifest?.trust ?? "unknown") || a.name.localeCompare(b.name);
+    if (registrySort === "license") return (a.manifest?.license ?? "zz").localeCompare(b.manifest?.license ?? "zz") || a.name.localeCompare(b.name);
+    if (registrySort === "readiness") return (a.manifest?.lifecycle ?? "zz").localeCompare(b.manifest?.lifecycle ?? "zz") || a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name);
+  });
+  const comparedEntries = compareIDs.map((id) => externalEntries.find((entry) => entry.id === id)).filter((entry): entry is ToolRegistryRecord => !!entry);
   const staleCollectionToolIDs = collectionToolIDs.filter((id) => !registryEntries.some((entry) => entry.id === id));
 
   const resetCollectionForm = () => {
@@ -680,18 +690,66 @@ export default function ToolsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 flex flex-wrap gap-2">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
                 {externalCategories.map((category) => (
                   <Button key={category} type="button" size="sm" variant={registryCategory === category ? "default" : "outline"} onClick={() => setRegistryCategory(category)}>
                     {category}
                   </Button>
-                ))}
+                  ))}
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{t("Sort by")}</span>
+                  <select aria-label={t("Sort external tools")} className="h-9 rounded-md border bg-background px-2 text-foreground" value={registrySort} onChange={(event) => setRegistrySort(event.target.value)}>
+                    <option value="name">{t("Name")}</option>
+                    <option value="verified">{t("Verification first")}</option>
+                    <option value="trust">{t("Trust level")}</option>
+                    <option value="readiness">{t("Lifecycle")}</option>
+                    <option value="license">{t("License")}</option>
+                  </select>
+                </label>
               </div>
-              {filteredExternalEntries.length === 0 ? (
+              <div className="mb-4 rounded-lg border bg-muted/20 p-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div><p className="text-sm font-medium">{t("Compare tools")}</p><p className="text-xs text-muted-foreground">{t("Choose up to three tools to compare capabilities, platforms, license, trust and readiness.")}</p></div>
+                  <Badge variant="secondary">{t("{count} / 3 selected", { count: compareIDs.length })}</Badge>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {externalEntries.map((entry) => (
+                    <label key={entry.id} className="flex items-center gap-2 text-xs">
+                      <input type="checkbox" className="size-4 accent-sky-600" checked={compareIDs.includes(entry.id)} disabled={!compareIDs.includes(entry.id) && compareIDs.length >= 3} onChange={(event) => setCompareIDs((current) => event.target.checked ? [...current, entry.id].slice(-3) : current.filter((id) => id !== entry.id))} />
+                      <span>{entry.name}</span>
+                    </label>
+                  ))}
+                  {externalEntries.length === 0 && <span className="text-xs text-muted-foreground">{t("No external tools to compare yet.")}</span>}
+                </div>
+                {comparedEntries.length > 0 && (
+                  <div className="mt-3 overflow-x-auto rounded-md border bg-background">
+                    <table className="w-full min-w-[560px] text-left text-xs">
+                      <thead><tr className="border-b"><th className="p-2 font-medium">{t("Comparison")}</th>{comparedEntries.map((entry) => <th key={entry.id} className="p-2 font-semibold">{entry.name}</th>)}</tr></thead>
+                      <tbody>
+                        {[
+                          [t("Capabilities"), (entry: ToolRegistryRecord) => (entry.manifest?.capabilities ?? []).join(", ") || t("Not listed")],
+                          [t("Platforms"), (entry: ToolRegistryRecord) => (entry.manifest?.platforms ?? []).join(", ") || t("Not listed")],
+                          [t("License"), (entry: ToolRegistryRecord) => entry.manifest?.license || t("Unknown")],
+                          [t("Trust"), (entry: ToolRegistryRecord) => entry.manifest?.trust || t("Unknown")],
+                          [t("Readiness"), (entry: ToolRegistryRecord) => entry.manifest?.lifecycle || t("Unknown")],
+                          [t("Availability"), (entry: ToolRegistryRecord) => entry.manifest?.availability || t("Unknown")],
+                          [t("Verified"), (entry: ToolRegistryRecord) => entry.manifest?.verified ? t("Yes") : t("Not yet")],
+                        ].map(([label, value]) => (
+                          <tr key={String(label)} className="border-b last:border-0"><th className="p-2 font-medium text-muted-foreground">{label}</th>{comparedEntries.map((entry) => <td key={entry.id} className="max-w-[220px] p-2 align-top">{(value as (entry: ToolRegistryRecord) => string)(entry)}</td>)}</tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {compareIDs.length > 0 && <div className="mt-2 flex justify-end"><Button type="button" size="sm" variant="ghost" onClick={() => setCompareIDs([])}>{t("Clear comparison")}</Button></div>}
+              </div>
+              {sortedExternalEntries.length === 0 ? (
                 <p className="text-muted-foreground py-6 text-center text-sm">{t("No registered external tools match this search.")}</p>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                  {filteredExternalEntries.map((entry) => <RegistryGridCard key={entry.id} entry={entry} onSelect={setSelectedRegistry} />)}
+                  {sortedExternalEntries.map((entry) => <RegistryGridCard key={entry.id} entry={entry} onSelect={setSelectedRegistry} />)}
                 </div>
               )}
             </CardContent>
