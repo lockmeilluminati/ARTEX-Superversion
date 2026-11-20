@@ -865,8 +865,10 @@ backup and key rotation see [docs/OPS.md](docs/OPS.md).
 For the Superversion package blueprint and phase-by-phase implementation map, see
 [docs/PLATFORM-ARCHITECTURE.md](docs/PLATFORM-ARCHITECTURE.md),
 [docs/ROADMAP-IMPLEMENTATION.md](docs/ROADMAP-IMPLEMENTATION.md), and
-[docs/TEST-MATRIX.md](docs/TEST-MATRIX.md). The new packages currently provide architectural
-scaffolds and contracts; they are not all connected to the runtime yet.
+[docs/TEST-MATRIX.md](docs/TEST-MATRIX.md), and
+[docs/TOOL-REGISTRY-MIGRATION.md](docs/TOOL-REGISTRY-MIGRATION.md). The first unified tool-catalogue
+importer now projects existing ARTEX tool rows into manifests; the wider packages are not all
+connected to the runtime yet.
 
 ---
 
