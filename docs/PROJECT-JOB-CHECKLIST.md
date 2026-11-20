@@ -109,10 +109,10 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 The next jobs prioritize the shared agent tool ecosystem and core intelligence gathering. Marketplace work is focused on readiness and operational usefulness rather than decorative expansion.
 
 1. **P0 — Finish shared tool visibility in runtime.** Inject the shared registry snapshot into planner/worker context so all agents see the same tools, while retaining per-agent execution permissions.
-2. **P0 — Validate runtime capability profiles against live configured agents and strengthen planner compatibility guidance.** Profile API/UI committed; live-instance validation and stronger planner behavior remain.
+2. **P0 — Validate runtime capability profiles against live configured agents.** Profile persistence, authenticated API, operator UI and explicit planner compatibility rules are committed; live-instance validation and DB-backed assembly/API test runs remain.
 3. **P0 — Make Yakit the first live external integration.** Verify the actual installed version and interface, then implement only supported adapter operations.
 4. **P0 — Implement Kali OS discovery.** Find tools actually installed, collect version/path/package provenance, and idempotently update the shared catalogue.
-5. **P0 — Verify the collection pipeline operationally.** Confirm parser tool binding and command → output file → parser → persistence, run DB-backed fixtures, and validate asset UI refresh as detailed in `docs/COLLECTION-PIPELINE-BASELINE.md`.
+5. **P0 — Verify the collection pipeline operationally.** Parser tools are included in the worker tool set; confirm local scanner binary availability and command → output file → parser → persistence, run DB-backed fixtures, and validate asset UI refresh as detailed in `docs/COLLECTION-PIPELINE-BASELINE.md`.
 6. **P0 — Define the canonical observation/evidence contract and reliable ingestion.**
 7. **P1 — Add measured performance profiles and live registry refresh across agents.**
 8. **P1 — Correlate assets, track coverage/freshness and generate evidence-backed next actions.**
