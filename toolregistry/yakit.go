@@ -17,6 +17,7 @@ func YakitManifest() Manifest {
 		ID:          YakitID,
 		Name:        "Yakit",
 		Description: "External cyber security all-in-one platform. ARTEX connectivity and supported automation operations must be verified against the installed Yakit version before use.",
+		Category: "Web security",
 		License: "AGPL-3.0",
 		Maintainer: "yaklang",
 		CanonicalRepository: "https://github.com/yaklang/yakit",
