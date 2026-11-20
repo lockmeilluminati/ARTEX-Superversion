@@ -37,6 +37,10 @@ func (s *Server) pgListToolRegistry(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	usageCounts, usageErr := pg.ToolUsageCounts()
+	if usageErr != nil {
+		log.Printf("[tool-registry] usage counts unavailable: %v", usageErr)
+	}
 	entries := make([]registryCatalogRecord, 0, len(tools))
 	for _, tool := range tools {
 		if tool == nil {
@@ -49,7 +53,7 @@ func (s *Server) pgListToolRegistry(w http.ResponseWriter, r *http.Request) {
 		entries = append(entries, registryCatalogRecord{
 			ID: "runtime." + tool.Key, Name: tool.Key, Source: source,
 			Description: tool.Description, Enabled: tool.Enabled,
-			Kind: tool.Kind, Agents: tool.Agents, Calls: tool.Calls,
+			Kind: tool.Kind, Agents: tool.Agents, Calls: usageCounts[tool.Key],
 		})
 	}
 
