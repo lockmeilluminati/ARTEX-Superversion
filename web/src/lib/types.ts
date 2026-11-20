@@ -1388,6 +1388,14 @@ export interface ToolCollection {
   updated_at: string;
 }
 
+export interface AgentCapabilityProfile {
+  agent_key: string;
+  capabilities: string[];
+  platforms: string[];
+  evidence: string[];
+  observed_at: string;
+}
+
 export interface ToolRegistryReview {
   id: number;
   registry_id: string;
