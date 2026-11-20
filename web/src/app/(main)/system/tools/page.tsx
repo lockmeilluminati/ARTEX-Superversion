@@ -431,6 +431,7 @@ function RegistryGridCard({ entry, onSelect }: { entry: ToolRegistryRecord; onSe
 
 function externalToolCategory(entry: ToolRegistryRecord): string {
   const text = [entry.name, entry.description, ...(entry.manifest?.capabilities ?? [])].join(" ").toLowerCase();
+  if (entry.manifest?.category) return entry.manifest.category;
   if (/recon|discover|nmap|scan|asset|subdomain/.test(text)) return "Reconnaissance";
   if (/web|http|request|proxy|browser|xss|sql|api/.test(text)) return "Web security";
   if (/traffic|packet|network|tcp|udp|dns/.test(text)) return "Network analysis";
