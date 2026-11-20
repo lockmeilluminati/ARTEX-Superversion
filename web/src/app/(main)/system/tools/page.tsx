@@ -603,8 +603,8 @@ export default function ToolsPage() {
                   {registryEntries.filter((entry) => entry.source === "external").filter((entry) => {
                     const q = query.trim().toLowerCase();
                     return !q || entry.name.toLowerCase().includes(q) ||
-                      entry.manifest.description?.toLowerCase().includes(q) ||
-                      (entry.manifest.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
+                      entry.manifest?.description?.toLowerCase().includes(q) ||
+                      (entry.manifest?.capabilities ?? []).some((capability) => capability.toLowerCase().includes(q));
                   }).map((entry) => <RegistryGridCard key={entry.id} entry={entry} />)}
                 </div>
               )}
