@@ -17,7 +17,7 @@ type sharedCatalogueEntry struct {
 	Name                 string   `json:"name"`
 	Source               string   `json:"source"`
 	Description          string   `json:"description,omitempty"`
-	Enabled              bool     `json:"enabled"`
+	Enabled              bool     `json:"enabled_globally"`
 	Kind                 string   `json:"kind,omitempty"`
 	Category             string   `json:"category,omitempty"`
 	License              string   `json:"license,omitempty"`
@@ -31,6 +31,7 @@ type sharedCatalogueEntry struct {
 	Trust                string   `json:"trust,omitempty"`
 	ApprovalRequired     bool     `json:"approval_required"`
 	Lifecycle            string   `json:"lifecycle,omitempty"`
+	ReviewStatus         string   `json:"review_status,omitempty"`
 }
 
 // sharedToolCatalogue is injected into every agent by wireAgentAugment.
@@ -113,7 +114,7 @@ func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
 				entry := sharedCatalogueEntry{
 					ID: "runtime." + t.Key, Name: t.Key, Source: kind,
 					Description: t.Description, Enabled: t.Enabled, Kind: t.Kind,
-					ExecutionMode: "unknown", VerificationStatus: "unverified",
+					ExecutionMode: "unknown", VerificationStatus: "unknown",
 					InstallationStatus: "unknown",
 				}
 				if catalogueMatches(query, entry.Name, entry.Description, entry.Category, entry.Capabilities) {
@@ -148,7 +149,7 @@ func sharedToolCatalogue(pg *db.DB) actool.CoreTool {
 						InstallationStatus: string(manifest.InstallationStatus),
 						Availability: string(manifest.Availability), Trust: string(manifest.Trust),
 						ApprovalRequired: manifest.ApprovalRequired,
-						Lifecycle: string(manifest.Lifecycle),
+						Lifecycle: string(manifest.Lifecycle), ReviewStatus: row.ReviewStatus,
 					}
 					for _, capability := range manifest.RequiredAgentCapabilities {
 						entry.RequiredCapabilities = append(entry.RequiredCapabilities, string(capability))
