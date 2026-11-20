@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"strings"
 	"time"
@@ -27,16 +28,22 @@ func (d *DB) CreateToolCollection(name, description string, toolIDs []string) (i
 	if name == "" {
 		return 0, ErrInvalidToolCollection
 	}
-	var id int64
-	err := d.QueryRow(
-		`INSERT INTO tool_collections (name, description) VALUES ($1, $2) RETURNING id`,
-		name, strings.TrimSpace(description),
-	).Scan(&id)
+	tx, err := d.Begin()
 	if err != nil {
 		return 0, err
 	}
-	if err := d.ReplaceToolCollectionItems(id, toolIDs); err != nil {
-		_, _ = d.Exec(`DELETE FROM tool_collections WHERE id = $1`, id)
+	defer tx.Rollback()
+	var id int64
+	if err := tx.QueryRow(
+		`INSERT INTO tool_collections (name, description) VALUES ($1, $2) RETURNING id`,
+		name, strings.TrimSpace(description),
+	).Scan(&id); err != nil {
+		return 0, err
+	}
+	if err := replaceToolCollectionItemsTx(tx, id, toolIDs); err != nil {
+		return 0, err
+	}
+	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 	return id, nil
