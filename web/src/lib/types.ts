@@ -1379,6 +1379,15 @@ export interface Tool {
 
 // One descriptive external-tool record from the persisted marketplace registry.
 // This metadata is informational only; it does not imply an installed or executable adapter.
+export interface ToolCollection {
+  id: number;
+  name: string;
+  description: string;
+  tool_ids: string[];
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ToolRegistryRecord {
   id: string;
   name: string;
