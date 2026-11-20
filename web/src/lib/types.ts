@@ -1382,7 +1382,13 @@ export interface Tool {
 export interface ToolRegistryRecord {
   id: string;
   name: string;
-  manifest: {
+  source: "native" | "custom" | "external";
+  description?: string;
+  enabled: boolean;
+  kind?: string;
+  agents?: string[];
+  calls?: number;
+  manifest?: {
     id: string;
     legacy_key?: string;
     name: string;
