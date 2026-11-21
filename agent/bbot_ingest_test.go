@@ -83,3 +83,13 @@ func TestParseBbotURLUserinfo(t *testing.T) {
 		t.Errorf("assetItems = %+v, want %+v", got, want)
 	}
 }
+
+func TestParseBbotJSONLEventCap(t *testing.T) {
+	var input strings.Builder
+	line := `{"type":"DNS_NAME","host":"cap.example.com","scope_distance":0}` + "\n"
+	for i := 0; i < bbotMaxEvents+3; i++ { input.WriteString(line) }
+	got, err := parseBbotJSONL(strings.NewReader(input.String()))
+	if err != nil { t.Fatal(err) }
+	if len(got.InScope)+len(got.Intel) != bbotMaxEvents { t.Fatalf("processed %d events, want cap %d", len(got.InScope)+len(got.Intel), bbotMaxEvents) }
+	if got.OverCap != 3 || !got.Truncated { t.Fatalf("over_cap=%d truncated=%v, want 3 and true", got.OverCap, got.Truncated) }
+}
