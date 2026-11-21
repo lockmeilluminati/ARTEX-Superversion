@@ -27,7 +27,14 @@ const bbotMaxLineBytes = 64 << 10
 // skipped for exceeding bbotMaxLineBytes.
 func readBbotJSONL(r io.Reader) (bbotIngest, int, error) {
 	var out bbotIngest
+	seen := 0
 	oversized, err := readJSONLines(r, func(line []byte) {
+		if seen >= bbotMaxEvents {
+			out.OverCap++
+			out.Truncated = true
+			return
+		}
+		seen++
 		res, _ := parseBbotJSONL(bytes.NewReader(line)) // a bytes.Reader never fails
 		out.InScope = append(out.InScope, res.InScope...)
 		out.Intel = append(out.Intel, res.Intel...)
