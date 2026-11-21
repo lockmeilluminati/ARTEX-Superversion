@@ -29,6 +29,17 @@ func TestObservationClaimPersistenceAndReplay(t *testing.T) {
 	t.Cleanup(func() { cleanupErr(t, "task", d.DeleteTask(task.ID)) })
 
 	ctx := context.Background()
+	if _, err := d.CreateCollectionRun(ctx, CollectionRun{
+		TaskID: task.ID, SourceToolID: "external.nmap", Status: "running",
+	}); err == nil {
+		t.Fatal("new collection run bypassed the planned state")
+	}
+	exitCode := 0
+	if _, err := d.CreateCollectionRun(ctx, CollectionRun{
+		TaskID: task.ID, SourceToolID: "external.nmap", Status: "planned", ExitCode: &exitCode,
+	}); err == nil {
+		t.Fatal("new collection run accepted terminal execution fields")
+	}
 	runID, err := d.CreateCollectionRun(ctx, CollectionRun{
 		TaskID: task.ID, ExplorationID: &task.ExplorationID,
 		SourceToolID: "external.nmap", ExecutionMode: "cli", Status: "planned",
