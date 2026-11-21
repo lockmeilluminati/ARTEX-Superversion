@@ -152,6 +152,9 @@ func TestCollectionRunLifecycleTransitions(t *testing.T) {
 	if !startIsNull {
 		t.Fatal("planned collection run has a start timestamp before process launch")
 	}
+	if _, err := d.ExecContext(ctx, `UPDATE collection_runs SET started_at=now() WHERE id=$1::uuid`, runID); err == nil {
+		t.Fatal("database accepted a start timestamp on a planned collection run")
+	}
 	if err := d.FinishCollectionRun(ctx, runID, "succeeded", time.Now().UTC(), nil, "premature.xml"); err == nil {
 		t.Fatal("planned collection run was finalized before process start")
 	}
