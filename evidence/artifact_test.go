@@ -64,4 +64,14 @@ func TestOpenCollectionArtifactAcceptsFileInsideRunDirectory(t *testing.T) {
 	if info.Size() != int64(len(want)) {
 		t.Fatalf("size = %d, want %d", info.Size(), len(want))
 	}
+	f.Close()
+
+	absolute, info, err := openCollectionArtifact(root, filepath.Join(root, "scan.jsonl"))
+	if err != nil {
+		t.Fatalf("absolute in-root path rejected: %v", err)
+	}
+	defer absolute.Close()
+	if info.Size() != int64(len(want)) {
+		t.Fatalf("absolute path size = %d, want %d", info.Size(), len(want))
+	}
 }
