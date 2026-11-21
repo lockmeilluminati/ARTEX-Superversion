@@ -75,6 +75,33 @@ VALUES ($1::uuid,$2,$3,$4,NULLIF($5,''),$6,$7,$8,$9,$10,$11::jsonb)`,
 	return run.ID, nil
 }
 
+// StartCollectionRun records that the external process was actually launched.
+// It is a one-way transition: duplicate starts and starts after a terminal state
+// are rejected so callers cannot silently rewrite execution history.
+func (d *DB) StartCollectionRun(ctx context.Context, id string, started time.Time) error {
+	if !uuidPattern.MatchString(id) {
+		return errors.New("collection run id must be a UUID")
+	}
+	if started.IsZero() {
+		started = time.Now().UTC()
+	}
+	res, err := d.ExecContext(ctx, `
+UPDATE collection_runs
+SET status='running', started_at=$2
+WHERE id=$1::uuid AND status='planned'`, id, started)
+	if err != nil {
+		return fmt.Errorf("start collection run: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 func (d *DB) FinishCollectionRun(ctx context.Context, id, status string, finished time.Time, exitCode *int, outputLocator string) error {
 	if !uuidPattern.MatchString(id) { return errors.New("collection run id must be a UUID") }
 	switch status {
