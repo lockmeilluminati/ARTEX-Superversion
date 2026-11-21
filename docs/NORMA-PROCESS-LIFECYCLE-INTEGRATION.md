@@ -49,3 +49,21 @@ The observer must be optional and non-blocking with respect to the public tool A
 ARTEX already has collection-run and evidence metadata persistence, task/tool identity checks, and a confined content-addressed artifact import method. The missing production seam is process-level lifecycle notification in Norma. Do not substitute `agent.RunInfo` (worker/intent scope), a tool-call hook, or an ingestion-attempt UUID for the process execution ID.
 
 This document records a source-inspected integration boundary; it does not claim that process lifecycle wiring or end-to-end evidence ingestion is implemented.
+
+## ARTEX-side launch-path audit
+
+A follow-up audit checked ARTEX's process-privilege shim and runtime assembly:
+
+- `server/execpriv_unix.go` installs a PATH-prepended `bash` symlink to the ARTEX binary. Norma's Bash launch resolves that name, and the shim drops privileges before `exec`-ing the real Bash. The exec preserves the PID, which is why Norma can continue to track the child.
+- The shim is not a lifecycle observer. It has no access to Norma's task/session manager, does not create a collection-run row, and deliberately `exec`s rather than remaining as a supervising parent. It therefore cannot reliably report process exit or Norma's output-file locator.
+- The same file's `__artex-exec-drop` path is for MCP stdio commands. It also drops privileges and execs the target; it is not the Bash/PTY task manager and has no completion callback.
+- `server/assembly.go` assembles agent tools and wraps tools for usage metering, but its tool-resolution and augmentation callbacks are at tool-call scope. They do not expose each OS process launch.
+- ARTEX's direct-child credential helper (`applyExecCredential`) configures credentials on an `exec.Cmd` created by ARTEX. It cannot intercept `exec.Cmd` instances constructed privately inside Norma.
+
+### Integration decision
+
+There is no safe ARTEX-only hook in the inspected paths that can both identify each real Norma process start and finalize the same execution record with the true exit status/output locator. Wrapping Bash through PATH would at best observe the shell boundary and, because the current shim uses `exec`, cannot observe completion. Tool hooks would incorrectly merge multiple launches and background work into one tool-call record.
+
+Do not add a synthetic collection run around a worker, tool call, or ingestion attempt. Keep the database/evidence primitives as foundations, but leave process-level Job 6 integration explicitly blocked until the pinned Norma API exposes a lifecycle observer (or ARTEX adopts and maintains a patched Norma fork).
+
+A viable upstream change must instrument the three launch paths listed above at their actual `Start`/PTY-start and wait/exit points. The observer must carry an execution ID through the wait path; it must not infer identity later from command text, PID reuse, timestamps, or a tool-call ID. ARTEX can then attach the run UUID and evidence registration to that execution.
