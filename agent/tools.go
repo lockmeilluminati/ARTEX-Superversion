@@ -1544,17 +1544,17 @@ func normalizeFactSource(s string) (string, error) {
 // recordOneFact writes one fact node and links it to the intent (intent→yields→fact).
 // defaultIntent is the default intent for batch mode (used when this item gives no
 // intent_id).
-func (t *ToolSet) recordOneFact(it factItem, defaultIntent int64) (int64, error) {
+func (t *ToolSet) recordOneFact(it factItem, defaultIntent int64) (int64, bool, error) {
 	if strings.TrimSpace(it.Summary) == "" {
-		return 0, fmt.Errorf("summary must not be empty: every fact, including each batch item, requires its own one-sentence summary")
+		return 0, false, fmt.Errorf("summary must not be empty: every fact, including each batch item, requires its own one-sentence summary")
 	}
 	source, err := normalizeFactSource(it.Source)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	anchors, err := it.factAssetAnchors()
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	payload := map[string]any{"summary": it.Summary, "source": source}
 	if it.Detail != "" {
@@ -1573,24 +1573,24 @@ func (t *ToolSet) recordOneFact(it factItem, defaultIntent int64) (int64, error)
 	if intent > 0 {
 		node, err := t.ts.GetNode(intent)
 		if err != nil || node == nil || node.Kind != db.KindIntent {
-			return 0, fmt.Errorf("intent_id must be an intent of this task (related-task intents are read-only)")
+			return 0, false, fmt.Errorf("intent_id must be an intent of this task (related-task intents are read-only)")
 		}
 	}
 	// Persist exact fact replays once at the database boundary. The transaction-
 	// scoped advisory lock in AddFactIfAbsent closes concurrent check/insert races.
 	id, inserted, err := t.ts.AddFactIfAbsent(payload, 5, "confirmed", t.worker, anchors)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	if intent > 0 {
 		if err := t.ts.Link(intent, db.RelYields, id); err != nil {
-			return 0, fmt.Errorf("link fact %d to intent %d: %w", id, intent, err)
+			return 0, false, fmt.Errorf("link fact %d to intent %d: %w", id, intent, err)
 		}
 	}
 	if inserted {
 		t.writes.Facts++
 	}
-	return id, nil
+	return id, inserted, nil
 }
 
 func (t *ToolSet) recordFact() actool.CoreTool {
@@ -1617,7 +1617,7 @@ func (t *ToolSet) recordFact() actool.CoreTool {
 			ids := make([]int64, len(items))
 			errs := map[string]string{}
 			for i, it := range items {
-				id, err := t.recordOneFact(it, defaultIntent)
+				id, _, err := t.recordOneFact(it, defaultIntent)
 				if err != nil {
 					errs[strconv.Itoa(i)] = err.Error()
 					continue
