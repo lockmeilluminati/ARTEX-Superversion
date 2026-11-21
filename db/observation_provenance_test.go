@@ -132,6 +132,9 @@ func TestCollectionRunLifecycleTransitions(t *testing.T) {
 		SourceToolID: "external.nmap", ExecutionMode: "cli", Status: "planned",
 	})
 	if err != nil { t.Fatal(err) }
+	if err := d.FinishCollectionRun(ctx, runID, "succeeded", time.Now().UTC(), nil, "premature.xml"); err == nil {
+		t.Fatal("planned collection run was finalized before process start")
+	}
 
 	started := time.Now().UTC().Truncate(time.Microsecond)
 	if err := d.StartCollectionRun(ctx, runID, started); err != nil {
