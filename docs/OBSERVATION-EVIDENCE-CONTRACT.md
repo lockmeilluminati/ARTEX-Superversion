@@ -195,3 +195,8 @@ Important limitations (do not treat this as completed persistence):
 6. Nuclei matches remain unverified. The adapter maps scanner-derived asset observations, not confirmed vulnerability findings.
 
 Next validation: run `go test ./normalizer ./agent`, review adapter outputs against real parser fixtures, and design the durable claim-link mapping only after evidence-store and task schema review.
+
+
+## Detailed persistence decision
+
+The implementation boundary and proposed schema are documented in [Observation Provenance and Persistence Design](OBSERVATION-PERSISTENCE-DESIGN.md). That design confirms the current scanner evidence gap: the evidence package has content-addressed blobs for HTTP traffic evidence, but scanner output is not yet registered as a generic immutable artifact. It also specifies that real collection-run IDs must originate at process launch, not be synthesized during ingestion. No migration has been applied.
