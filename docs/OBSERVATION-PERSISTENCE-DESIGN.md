@@ -99,6 +99,10 @@ Use a separate join relation if a single claim needs multiple evidence objects. 
 6. Add authenticated read APIs and operator provenance UI only after access-control review.
 7. Backfill no historical run IDs or evidence digests by guessing. Legacy rows remain explicitly legacy/unknown provenance.
 
+### Implemented lineage guard (2026-11-20)
+
+`InsertObservationClaim` now inserts only when the registered evidence artifact and its parent collection run both match the claim's `source_run_id`, `task_id` and `source_tool_id`. This prevents a valid artifact/run pair from being reused to attribute a claim to another task or tool. PostgreSQL regression cases cover mismatched task and tool identities; execution remains pending.
+
 ## Acceptance tests required before calling this job implemented
 
 - Run ID is generated at execution launch and remains identical from process through ingestion; retries receive different IDs. (UUID helper and DB creation API exist; launch-boundary wiring remains pending.)
