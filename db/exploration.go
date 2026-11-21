@@ -252,6 +252,70 @@ VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
 	return id, tx.Commit()
 }
 
+
+// AddFactIfAbsent persists a fact once per exploration and exact JSON payload.
+// A transaction-scoped advisory lock serializes concurrent identical writes;
+// different payloads remain separate claims. Anchors from replays are unioned
+// onto the existing fact so a replay cannot erase additional lineage.
+func (s *ExplorationStore) AddFactIfAbsent(payload map[string]any, priority int, state, origin string, anchors []int64) (id int64, inserted bool, err error) {
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return 0, false, fmt.Errorf("marshal fact payload: %w", err)
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return 0, false, err
+	}
+	defer tx.Rollback()
+
+	// Serialize only equal payloads in this exploration. Hash collisions merely
+	// serialize unrelated writes; the JSONB equality check remains authoritative.
+	lockKey := fmt.Sprintf("exploration-fact:%d:%s", s.expID, raw)
+	if _, err = tx.Exec(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, lockKey); err != nil {
+		return 0, false, fmt.Errorf("lock fact replay key: %w", err)
+	}
+	if len(anchors) > 0 {
+		if err = checkFactAnchorAssets(tx, anchors); err != nil {
+			return 0, false, err
+		}
+	}
+	err = tx.QueryRow(`
+SELECT id FROM exploration_nodes
+WHERE exploration_id=$1 AND kind=$2 AND state <> 'origin' AND payload=$3::jsonb
+ORDER BY id LIMIT 1`, s.expID, KindFact, string(raw)).Scan(&id)
+	switch {
+	case err == nil:
+		for _, assetID := range anchors {
+			if _, err = tx.Exec(`INSERT INTO exploration_anchors(node_id, asset_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, id, assetID); err != nil {
+				return 0, false, err
+			}
+		}
+		if err = tx.Commit(); err != nil {
+			return 0, false, err
+		}
+		return id, false, nil
+	case err != sql.ErrNoRows:
+		return 0, false, err
+	}
+
+	err = tx.QueryRow(`
+INSERT INTO exploration_nodes(exploration_id, kind, payload, priority, state, origin)
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+		s.expID, KindFact, string(raw), priority, state, origin).Scan(&id)
+	if err != nil {
+		return 0, false, err
+	}
+	for _, assetID := range anchors {
+		if _, err = tx.Exec(`INSERT INTO exploration_anchors(node_id, asset_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, id, assetID); err != nil {
+			return 0, false, err
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return 0, false, err
+	}
+	return id, true, nil
+}
+
 func checkFactAnchorAssets(tx *sql.Tx, ids []int64) error {
 	rows, err := tx.Query("SELECT id FROM assets WHERE id = ANY($1::bigint[]) ORDER BY id FOR KEY SHARE", ids)
 	if err != nil {
