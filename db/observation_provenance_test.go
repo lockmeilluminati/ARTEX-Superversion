@@ -31,9 +31,10 @@ func TestObservationClaimPersistenceAndReplay(t *testing.T) {
 	ctx := context.Background()
 	runID, err := d.CreateCollectionRun(ctx, CollectionRun{
 		TaskID: task.ID, ExplorationID: &task.ExplorationID,
-		SourceToolID: "external.nmap", ExecutionMode: "cli", Status: "running",
+		SourceToolID: "external.nmap", ExecutionMode: "cli", Status: "planned",
 	})
 	if err != nil { t.Fatal(err) }
+	if err := d.StartCollectionRun(ctx, runID, time.Now().UTC()); err != nil { t.Fatal(err) }
 	digest := strings.Repeat("a", 64)
 	evidenceID, err := NewCollectionRunID()
 	if err != nil { t.Fatal(err) }
@@ -92,9 +93,10 @@ func TestObservationClaimPersistenceAndReplay(t *testing.T) {
 
 	run2, err := d.CreateCollectionRun(ctx, CollectionRun{
 		TaskID: task.ID, ExplorationID: &task.ExplorationID,
-		SourceToolID: "external.nmap", ExecutionMode: "cli", Status: "running",
+		SourceToolID: "external.nmap", ExecutionMode: "cli", Status: "planned",
 	})
 	if err != nil { t.Fatal(err) }
+	if err := d.StartCollectionRun(ctx, run2, time.Now().UTC()); err != nil { t.Fatal(err) }
 	evidence2, err := NewCollectionRunID()
 	if err != nil { t.Fatal(err) }
 	if err := d.RegisterEvidenceArtifactMetadata(ctx, EvidenceArtifactMetadata{
