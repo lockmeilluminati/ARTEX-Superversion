@@ -41,10 +41,14 @@ type bbotEvent struct {
 }
 
 // bbotIngest is the result of parsing one output.json.
+const bbotMaxEvents = 50000
+
 type bbotIngest struct {
 	InScope []bbotEvent // scope_distance == 0: the only events that may feed insert_assets
-	Intel   []bbotEvent // any other scope_distance: third_party_intel, never auto-scoped
-	Skipped int         // lines that do not decode as an event
+	Intel []bbotEvent // any other scope_distance: third_party_intel, never auto-scoped
+	Skipped int // lines that do not decode as an event
+	OverCap int // records beyond bbotMaxEvents
+	Truncated bool // true when the event cap dropped records
 }
 
 // bbotRawEvent lists the only keys decoded; encoding/json drops every other key.
@@ -70,10 +74,16 @@ var (
 func parseBbotJSONL(r io.Reader) (bbotIngest, error) {
 	var out bbotIngest
 	br := bufio.NewReader(r)
+	seen := 0
 	for {
 		line, err := br.ReadBytes('\n')
 		if len(bytes.TrimSpace(line)) > 0 {
-			var raw bbotRawEvent
+			if seen >= bbotMaxEvents {
+				out.OverCap++
+				out.Truncated = true
+			} else {
+				seen++
+				var raw bbotRawEvent
 			if json.Unmarshal(line, &raw) != nil {
 				out.Skipped++
 			} else if ev := bbotTyped(raw); raw.ScopeDistance != nil && *raw.ScopeDistance == 0 {
@@ -82,6 +92,7 @@ func parseBbotJSONL(r io.Reader) (bbotIngest, error) {
 			} else {
 				ev.Source = factSourceThirdPartyIntel
 				out.Intel = append(out.Intel, ev)
+			}
 			}
 		}
 		if errors.Is(err, io.EOF) {
