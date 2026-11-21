@@ -131,3 +131,10 @@ Current implementation slice: the existing catalogue API combines native/custom 
 - **Approved**: an operator has authorized the relevant use; this is not proof of installation or functionality.
 - **Operational**: configured and successfully exercised end-to-end in the target environment.
 - **Measured**: performance/reliability claims are backed by recorded observations.
+
+
+## Job 5 implementation note — evidence-backed enrichment (2026-11-20)
+
+A new `enrichment` package now provides a deterministic, read-only projection over existing ARTEX asset records and the existing `assetgraph.Correlate` relationships. Explicit service, HTTP and technology fields are surfaced with source-field rationale; conventional port mappings are low-confidence inferred hints only. Relationship evidence/confidence/verification labels are retained.
+
+This is a committed foundation, not an integrated feature: no new asset/finding writes are performed, and the projection is not yet wired to the agent, authenticated API or operator UI. Durable evidence claim IDs depend on the Job 9 persistence work. See `docs/WORK-QUEUE-AUDIT.md` for the expanded backlog and remaining validation tasks.
