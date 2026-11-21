@@ -172,7 +172,7 @@ func (t *ToolSet) runScanIngest(ctx context.Context, in json.RawMessage, tc *act
 			out["asset_errors"] = map[string]any{"count": len(res.Errors), "first": errs}
 		}
 	}
-	written, existing, errs, err := t.recordScanFacts(s.Facts)
+	written, existing, errs, err := t.recordIngestFacts(s.Facts)
 	if err != nil {
 		return actool.Errorf("facts: " + err.Error()), nil
 	}
@@ -183,9 +183,10 @@ func (t *ToolSet) runScanIngest(ctx context.Context, in json.RawMessage, tc *act
 	return jsonResult(out)
 }
 
-// recordScanFacts writes the facts this exploration does not hold yet: one with
-// the same source, summary and detail is counted as existing, not written again.
-func (t *ToolSet) recordScanFacts(facts []factItem) (written, existing int, errs []string, err error) {
+// recordIngestFacts writes facts not already present in this exploration. Exact
+// source+summary+detail replays are counted as existing; differing payloads remain
+// separate facts so conflicting observations are not silently overwritten.
+func (t *ToolSet) recordIngestFacts(facts []factItem) (written, existing int, errs []string, err error) {
 	seen := map[string]bool{}
 	key := func(source, summary, detail string) string { return source + "\x00" + summary + "\x00" + detail }
 	for before, more := int64(0), true; more; {
