@@ -1576,15 +1576,20 @@ func (t *ToolSet) recordOneFact(it factItem, defaultIntent int64) (int64, error)
 			return 0, fmt.Errorf("intent_id must be an intent of this task (related-task intents are read-only)")
 		}
 	}
-	// a fact is its OWN node kind (distinct from a vuln finding).
-	id, err := t.ts.AddNode(db.KindFact, payload, 5, "confirmed", t.worker, anchors)
+	// Persist exact fact replays once at the database boundary. The transaction-
+	// scoped advisory lock in AddFactIfAbsent closes concurrent check/insert races.
+	id, inserted, err := t.ts.AddFactIfAbsent(payload, 5, "confirmed", t.worker, anchors)
 	if err != nil {
 		return 0, err
 	}
 	if intent > 0 {
-		_ = t.ts.Link(intent, db.RelYields, id) // chain: intent -> fact
+		if err := t.ts.Link(intent, db.RelYields, id); err != nil {
+			return 0, fmt.Errorf("link fact %d to intent %d: %w", id, intent, err)
+		}
 	}
-	t.writes.Facts++
+	if inserted {
+		t.writes.Facts++
+	}
 	return id, nil
 }
 
