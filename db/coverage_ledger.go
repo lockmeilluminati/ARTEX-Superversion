@@ -23,6 +23,7 @@ const (
 	OutcomeRuledOut      = "ruled_out"
 	OutcomeNotApplicable = "not_applicable"
 	OutcomeNeedsFollowUp = "needs_follow_up"
+	OutcomeTestFailed     = "test_failed"
 )
 
 // Gap kinds.
@@ -31,6 +32,7 @@ const (
 	GapUnrecordedRiskClass = "unrecorded_risk_class"
 	GapMissingEvidence     = "missing_evidence"
 	GapMissingReason       = "missing_reason"
+	GapTestFailed          = "test_failed"
 )
 
 // EndReasonBudget is the tasks.end_reason of a run settled by the run-budget
@@ -54,7 +56,7 @@ const (
 // ValidCoverageOutcome reports whether o is one of the five ledger outcomes.
 func ValidCoverageOutcome(o string) bool {
 	switch o {
-	case OutcomeReported, OutcomeNoIssueFound, OutcomeRuledOut, OutcomeNotApplicable, OutcomeNeedsFollowUp:
+	case OutcomeReported, OutcomeNoIssueFound, OutcomeRuledOut, OutcomeNotApplicable, OutcomeNeedsFollowUp, OutcomeTestFailed:
 		return true
 	}
 	return false
@@ -98,6 +100,7 @@ type CoverageCompleteness struct {
 // CoverageLedger is the ledger document of one task.
 type CoverageLedger struct {
 	Entries         []CoverageEntry       `json:"entries"`
+	Assessments     []CoverageAssessment  `json:"assessments"`
 	Gaps            []CoverageGap         `json:"gaps"`
 	Unexamined      []string              `json:"unexamined"`        // mandatory classes with no entry
 	FindingsByClass map[string]int        `json:"findings_by_class"` // machine_observed
@@ -253,6 +256,7 @@ FROM tasks t WHERE t.id=$1`, taskID, EndReasonBudget).Scan(&status, &paused, &bu
 		return nil, err
 	}
 	l := BuildCoverageLedger(entries, classes, CoverageCompletenessFor(status, paused, budget, pastDeadline))
+	l.Assessments = AssessCoverageEntries(entries, time.Now().UTC(), DefaultCoverageFreshnessWindow)
 	l.FindingsByClass = byClass
 	return l, nil
 }
@@ -289,6 +293,8 @@ func BuildCoverageLedger(entries []CoverageEntry, mandatory []string, c Coverage
 		switch {
 		case e.Outcome == OutcomeNeedsFollowUp:
 			l.Gaps = append(l.Gaps, CoverageGap{GapNeedsFollowUp, e.Surface, e.RiskArea})
+		case e.Outcome == OutcomeTestFailed:
+			l.Gaps = append(l.Gaps, CoverageGap{GapTestFailed, e.Surface, e.RiskArea})
 		case e.Outcome == OutcomeNoIssueFound && strings.TrimSpace(e.Evidence) == "":
 			l.Gaps = append(l.Gaps, CoverageGap{GapMissingEvidence, e.Surface, e.RiskArea})
 		case (e.Outcome == OutcomeRuledOut || e.Outcome == OutcomeNotApplicable) && strings.TrimSpace(e.Reason) == "":
@@ -332,4 +338,78 @@ func CoverageCompletenessFor(status string, paused, budget, pastDeadline bool) C
 		return CoverageCompleteness{true, state, "Run ended normally. Classes listed as unexamined were not tested and are not clean."}
 	}
 	return CoverageCompleteness{false, state, "Incomplete scan (" + state + "): the absence of a finding does not mean the target is clean; unexamined classes and open gaps were not covered."}
+}
+
+
+// CoverageState is the interpreted state of one surface/risk-area assessment.
+// It is derived from the existing ledger entry; it is not a second persistence model.
+type CoverageState string
+
+const (
+	CoverageNotTested      CoverageState = "not_tested"
+	CoverageTestedPositive CoverageState = "tested_positive"
+	CoverageTestedNegative CoverageState = "tested_negative"
+	CoverageNotApplicable  CoverageState = "not_applicable"
+	CoveragePartial        CoverageState = "partial"
+	CoverageFailed         CoverageState = "failed"
+	CoverageStale          CoverageState = "stale"
+	CoverageUnknown        CoverageState = "unknown"
+)
+
+// DefaultCoverageFreshnessWindow is a reporting default, not a claim that all
+// security tests expire after exactly 30 days. Callers can supply a domain-specific
+// freshness window to AssessCoverageEntry.
+const DefaultCoverageFreshnessWindow = 30 * 24 * time.Hour
+
+type CoverageAssessment struct {
+	Surface       string        `json:"surface,omitempty"`
+	RiskArea      string        `json:"risk_area,omitempty"`
+	State         CoverageState `json:"state"`
+	PreviousState CoverageState `json:"previous_state,omitempty"`
+	Outcome       string        `json:"outcome,omitempty"`
+	LastChecked   *time.Time    `json:"last_checked,omitempty"`
+}
+
+// AssessCoverageEntry distinguishes an absent entry from an explicit result.
+// A negative result without evidence and ruled-out/not-applicable without a reason
+// remain unknown. Staleness overlays (but does not erase) the prior assessment.
+func AssessCoverageEntry(e *CoverageEntry, now time.Time, maxAge time.Duration) CoverageAssessment {
+	if e == nil {
+		return CoverageAssessment{State: CoverageNotTested}
+	}
+	a := CoverageAssessment{Surface: e.Surface, RiskArea: e.RiskArea, Outcome: e.Outcome}
+	if e.UpdatedAt.IsZero() || now.IsZero() || e.UpdatedAt.After(now) {
+		a.State = CoverageUnknown
+		return a
+	}
+	checked := e.UpdatedAt.UTC()
+	a.LastChecked = &checked
+	switch e.Outcome {
+	case OutcomeReported:
+		a.State = CoverageTestedPositive
+	case OutcomeNoIssueFound:
+		if strings.TrimSpace(e.Evidence) == "" { a.State = CoverageUnknown } else { a.State = CoverageTestedNegative }
+	case OutcomeRuledOut, OutcomeNotApplicable:
+		if strings.TrimSpace(e.Reason) == "" { a.State = CoverageUnknown } else { a.State = CoverageNotApplicable }
+	case OutcomeNeedsFollowUp:
+		a.State = CoveragePartial
+	case OutcomeTestFailed:
+		a.State = CoverageFailed
+	default:
+		a.State = CoverageUnknown
+	}
+	if a.State != CoverageUnknown && maxAge > 0 && now.Sub(e.UpdatedAt) > maxAge {
+		a.PreviousState = a.State
+		a.State = CoverageStale
+	}
+	return a
+}
+
+// AssessCoverageEntries returns one deterministic assessment per entry.
+func AssessCoverageEntries(entries []CoverageEntry, now time.Time, maxAge time.Duration) []CoverageAssessment {
+	out := make([]CoverageAssessment, 0, len(entries))
+	for i := range entries {
+		out = append(out, AssessCoverageEntry(&entries[i], now, maxAge))
+	}
+	return out
 }
