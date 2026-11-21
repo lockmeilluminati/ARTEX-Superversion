@@ -121,12 +121,23 @@ func (d *DB) RegisterEvidenceArtifactMetadata(ctx context.Context, a EvidenceArt
 	if len(a.OriginalName) > 512 { return errors.New("original artifact name exceeds 512 bytes") }
 	if a.CapturedAt.IsZero() { a.CapturedAt = time.Now().UTC() }
 	if a.MediaType == "" { a.MediaType = "application/octet-stream" }
-	_, err := d.ExecContext(ctx, `
+	if a.TaskID == nil || *a.TaskID <= 0 || a.CollectionRunID == nil || !uuidPattern.MatchString(*a.CollectionRunID) {
+		return errors.New("evidence artifact requires a task and collection run")
+	}
+	if strings.TrimSpace(a.SourceToolID) == "" { return errors.New("evidence artifact source tool id is required") }
+	res, err := d.ExecContext(ctx, `
 INSERT INTO evidence_artifacts
 (id, sha256, byte_length, media_type, storage_key, task_id, collection_run_id, source_tool_id, original_name, captured_at)
-VALUES ($1::uuid,$2,$3,$4,$5,$6,$7::uuid,$8,$9,$10)`,
-		a.ID, a.SHA256, a.ByteLength, a.MediaType, a.StorageKey, a.TaskID, nullableUUID(a.CollectionRunID), a.SourceToolID, a.OriginalName, a.CapturedAt)
+SELECT $1::uuid,$2,$3,$4,$5,$6,$7::uuid,$8,$9,$10
+WHERE EXISTS (
+ SELECT 1 FROM collection_runs cr
+ WHERE cr.id=$7::uuid AND cr.task_id=$6 AND cr.source_tool_id=$8
+)`,
+		a.ID, a.SHA256, a.ByteLength, a.MediaType, a.StorageKey, a.TaskID, *a.CollectionRunID, a.SourceToolID, a.OriginalName, a.CapturedAt)
 	if err != nil { return fmt.Errorf("register evidence artifact metadata: %w", err) }
+	n, err := res.RowsAffected()
+	if err != nil { return err }
+	if n == 0 { return errors.New("evidence artifact task, source tool and collection run do not match an existing run") }
 	return nil
 }
 
