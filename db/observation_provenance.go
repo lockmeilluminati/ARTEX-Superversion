@@ -67,7 +67,9 @@ func (d *DB) CreateCollectionRun(ctx context.Context, run CollectionRun) (string
 	if run.FinishedAt != nil || run.ExitCode != nil {
 		return "", errors.New("new collection run cannot have terminal execution fields")
 	}
-	if run.StartedAt.IsZero() { run.StartedAt = time.Now().UTC() }
+	if !run.StartedAt.IsZero() {
+		return "", errors.New("planned collection run cannot have a start timestamp")
+	}
 	if len(run.Metadata) == 0 { run.Metadata = json.RawMessage(`{}`) }
 	if !json.Valid(run.Metadata) || len(run.Metadata) > 64*1024 { return "", errors.New("collection run metadata must be valid JSON under 64 KiB") }
 
@@ -76,7 +78,7 @@ INSERT INTO collection_runs
 (id, task_id, exploration_id, source_tool_id, source_tool_version, execution_mode, platform, status, started_at, output_locator, metadata)
 VALUES ($1::uuid,$2,$3,$4,NULLIF($5,''),$6,$7,$8,$9,$10,$11::jsonb)`,
 		run.ID, run.TaskID, run.ExplorationID, run.SourceToolID, run.SourceToolVersion,
-		run.ExecutionMode, run.Platform, run.Status, run.StartedAt, run.OutputLocator, string(run.Metadata))
+		run.ExecutionMode, run.Platform, run.Status, nil, run.OutputLocator, string(run.Metadata))
 	if err != nil { return "", fmt.Errorf("create collection run: %w", err) }
 	return run.ID, nil
 }
