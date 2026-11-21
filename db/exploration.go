@@ -253,14 +253,25 @@ VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
 }
 
 
-// AddFactIfAbsent persists a fact once per exploration and exact JSON payload.
-// A transaction-scoped advisory lock serializes concurrent identical writes;
-// different payloads remain separate claims. Anchors from replays are unioned
-// onto the existing fact so a replay cannot erase additional lineage.
+// AddFactIfAbsent persists one fact per exploration and canonical source/summary/detail.
+// A transaction-scoped advisory lock serializes concurrent writes across ingestion
+// adapters. Evidence/confidence metadata does not change the fact's semantic key;
+// distinct details or sources remain separate facts. Replay anchors are unioned.
 func (s *ExplorationStore) AddFactIfAbsent(payload map[string]any, priority int, state, origin string, anchors []int64) (id int64, inserted bool, err error) {
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return 0, false, fmt.Errorf("marshal fact payload: %w", err)
+	}
+	var summary, source, detail string
+	if err := json.Unmarshal(raw, &struct {
+		Summary *string `json:"summary"`
+		Source  *string `json:"source"`
+		Detail  *string `json:"detail"`
+	}{Summary: &summary, Source: &source, Detail: &detail}); err != nil {
+		return 0, false, fmt.Errorf("decode fact identity: %w", err)
+	}
+	if strings.TrimSpace(summary) == "" || strings.TrimSpace(source) == "" {
+		return 0, false, errors.New("fact identity requires non-empty summary and source")
 	}
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -268,9 +279,9 @@ func (s *ExplorationStore) AddFactIfAbsent(payload map[string]any, priority int,
 	}
 	defer tx.Rollback()
 
-	// Serialize only equal payloads in this exploration. Hash collisions merely
-	// serialize unrelated writes; the JSONB equality check remains authoritative.
-	lockKey := fmt.Sprintf("exploration-fact:%d:%s", s.expID, raw)
+	// Hash collisions only serialize unrelated writes; JSON field comparison
+	// below remains authoritative and scoped to this exploration.
+	lockKey := fmt.Sprintf("exploration-fact:%d:%s:%s:%s", s.expID, source, summary, detail)
 	if _, err = tx.Exec(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, lockKey); err != nil {
 		return 0, false, fmt.Errorf("lock fact replay key: %w", err)
 	}
@@ -281,8 +292,11 @@ func (s *ExplorationStore) AddFactIfAbsent(payload map[string]any, priority int,
 	}
 	err = tx.QueryRow(`
 SELECT id FROM exploration_nodes
-WHERE exploration_id=$1 AND kind=$2 AND state <> 'origin' AND payload=$3::jsonb
-ORDER BY id LIMIT 1`, s.expID, KindFact, string(raw)).Scan(&id)
+WHERE exploration_id=$1 AND kind=$2 AND state <> 'origin'
+  AND payload->>'source'=$3
+  AND payload->>'summary'=$4
+  AND COALESCE(payload->>'detail','')=$5
+ORDER BY id LIMIT 1`, s.expID, KindFact, source, summary, detail).Scan(&id)
 	switch {
 	case err == nil:
 		for _, assetID := range anchors {
