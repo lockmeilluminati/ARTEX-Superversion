@@ -111,7 +111,7 @@ func (d *DB) FinishCollectionRun(ctx context.Context, id, status string, finishe
 	if finished.IsZero() { finished = time.Now().UTC() }
 	res, err := d.ExecContext(ctx, `
 UPDATE collection_runs SET status=$2, finished_at=$3, exit_code=$4, output_locator=$5
-WHERE id=$1::uuid AND status IN ('planned','running')`, id, status, finished, exitCode, outputLocator)
+WHERE id=$1::uuid AND status='running'`, id, status, finished, exitCode, outputLocator)
 	if err != nil { return fmt.Errorf("finish collection run: %w", err) }
 	n, err := res.RowsAffected()
 	if err != nil { return err }
