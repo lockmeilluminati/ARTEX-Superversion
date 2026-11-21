@@ -1588,7 +1588,7 @@ CREATE TABLE IF NOT EXISTS coverage_ledger (
     surface     TEXT NOT NULL,
     risk_area   TEXT NOT NULL,  -- stored lower-case, matched against goal vulnclass
     outcome     TEXT NOT NULL
-                CHECK (outcome IN ('reported','no_issue_found','ruled_out','not_applicable','needs_follow_up')),
+                CHECK (outcome IN ('reported','no_issue_found','ruled_out','not_applicable','needs_follow_up','test_failed')),
     evidence    TEXT NOT NULL DEFAULT '',
     reason      TEXT NOT NULL DEFAULT '',
     worker      TEXT NOT NULL DEFAULT '',
