@@ -152,8 +152,20 @@ func TestCollectionRunLifecycleTransitions(t *testing.T) {
 		t.Fatal("duplicate process start was accepted")
 	}
 	exitCode := 0
-	if err := d.FinishCollectionRun(ctx, runID, "succeeded", started.Add(time.Minute), &exitCode, "output.xml"); err != nil {
+	finished := started.Add(time.Minute)
+	if err := d.FinishCollectionRun(ctx, runID, "succeeded", finished, &exitCode, "output.xml"); err != nil {
 		t.Fatalf("finish running run: %v", err)
+	}
+	if err := d.FinishCollectionRun(ctx, runID, "failed", finished.Add(time.Second), nil, "replacement.xml"); err == nil {
+		t.Fatal("terminal collection run was finalized a second time")
+	}
+	var finalStatus, outputLocator string
+	var finalFinished time.Time
+	if err := d.QueryRowContext(ctx, `SELECT status, output_locator, finished_at FROM collection_runs WHERE id=$1::uuid`, runID).Scan(&finalStatus, &outputLocator, &finalFinished); err != nil {
+		t.Fatal(err)
+	}
+	if finalStatus != "succeeded" || outputLocator != "output.xml" || !finalFinished.Equal(finished) {
+		t.Fatalf("second finalization changed terminal record: status=%q output=%q finished=%s", finalStatus, outputLocator, finalFinished)
 	}
 	if err := d.StartCollectionRun(ctx, runID, started.Add(2*time.Minute)); err == nil {
 		t.Fatal("terminal collection run was restarted")
