@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"testing"
+	"testing"\n\t"time"
 )
 
 func TestBuildCoverageLedgerGaps(t *testing.T) {
@@ -23,6 +23,8 @@ func TestBuildCoverageLedgerGaps(t *testing.T) {
 			[]string{"unrecorded_risk_class sqli"}, []string{"sqli"}},
 		{"needs_follow_up is a gap", []CoverageEntry{e("/login", "idor", OutcomeNeedsFollowUp, "", "")}, nil,
 			[]string{"needs_follow_up /login idor"}, nil},
+		{"failed test remains an explicit gap", []CoverageEntry{e("/login", "idor", OutcomeTestFailed, "", "timeout")}, nil,
+			[]string{"test_failed /login idor"}, nil},
 		{"no_issue_found without evidence is a gap", []CoverageEntry{e("/q", "sqli", OutcomeNoIssueFound, " ", "")}, []string{"sqli"},
 			[]string{"missing_evidence /q sqli"}, nil},
 		{"no_issue_found with evidence closes the class", []CoverageEntry{e("/q", "sqli", OutcomeNoIssueFound, "fact 12", "")}, []string{"SQLi "},
@@ -85,7 +87,7 @@ func TestCoverageJSONCarriesLedger(t *testing.T) {
 	b, _ := json.Marshal(&Coverage{Enabled: true, ByType: []CoverageByType{}, CoverageLedger: l})
 	var m map[string]json.RawMessage
 	_ = json.Unmarshal(b, &m)
-	for _, k := range []string{"entries", "gaps", "unexamined", "completeness", "by_type"} {
+	for _, k := range []string{"entries", "assessments", "gaps", "unexamined", "completeness", "by_type"} {
 		if _, ok := m[k]; !ok {
 			t.Fatalf("missing %q in %s", k, b)
 		}
@@ -281,5 +283,39 @@ func TestNormalizeCoverageEntry(t *testing.T) {
 	}
 	if _, err := normalizeCoverageEntry(CoverageEntry{Surface: "\n\t", RiskArea: "xss", Outcome: OutcomeReported}); err == nil {
 		t.Fatal("blank surface accepted")
+	}
+}
+
+
+func TestAssessCoverageEntryStates(t *testing.T) {
+	now := time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC)
+	entry := func(outcome, evidence, reason string, age time.Duration) *CoverageEntry {
+		return &CoverageEntry{Surface: "/login", RiskArea: "sqli", Outcome: outcome, Evidence: evidence, Reason: reason, UpdatedAt: now.Add(-age)}
+	}
+	cases := []struct {
+		name string
+		entry *CoverageEntry
+		want CoverageState
+		previous CoverageState
+	}{
+		{"absent is not tested", nil, CoverageNotTested, ""},
+		{"explicit finding", entry(OutcomeReported, "", "", time.Hour), CoverageTestedPositive, ""},
+		{"evidence-backed negative", entry(OutcomeNoIssueFound, "fact:12", "", time.Hour), CoverageTestedNegative, ""},
+		{"negative without evidence is unknown", entry(OutcomeNoIssueFound, "", "", time.Hour), CoverageUnknown, ""},
+		{"ruled out with reason", entry(OutcomeRuledOut, "", "not reachable", time.Hour), CoverageNotApplicable, ""},
+		{"not applicable with reason", entry(OutcomeNotApplicable, "", "feature absent", time.Hour), CoverageNotApplicable, ""},
+		{"follow-up is partial", entry(OutcomeNeedsFollowUp, "", "", time.Hour), CoveragePartial, ""},
+		{"failed is not negative", entry(OutcomeTestFailed, "", "timeout", time.Hour), CoverageFailed, ""},
+		{"old negative becomes stale but retains prior state", entry(OutcomeNoIssueFound, "fact:12", "", 31*24*time.Hour), CoverageStale, CoverageTestedNegative},
+		{"future timestamp is unknown", entry(OutcomeReported, "", "", -time.Hour), CoverageUnknown, ""},
+		{"unrecognized outcome is unknown", entry("maybe_clean", "", "", time.Hour), CoverageUnknown, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := AssessCoverageEntry(tc.entry, now, DefaultCoverageFreshnessWindow)
+			if got.State != tc.want || got.PreviousState != tc.previous {
+				t.Fatalf("assessment=%+v want state=%s previous=%s", got, tc.want, tc.previous)
+			}
+		})
 	}
 }
