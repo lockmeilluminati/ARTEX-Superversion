@@ -28,7 +28,7 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 - [ ] **P0 — Make ingestion reliable and idempotent.** Add parsers/adapters for the highest-value existing discovery outputs; validate inputs, handle partial/malformed results, deduplicate repeated observations and update last-seen/source lineage without losing history.
 - [~] **P1 — Correlate the attack-surface graph.** Added a deterministic, read-only `assetgraph.Correlate` projection for explicit domain/root-domain, subdomain/IP, service/host and endpoint/service relationships. Every edge carries a relation, source-field rationale, confidence and observed/inferred label; company membership and subnet proximity alone never create edges. Unit fixtures cover supported links, conservative non-links and deterministic output. Remaining: connect persisted evidence/observation claims and findings, expose graph through authenticated API/UI, and run tests against real DB fixtures.
 - [~] **P1 — Build collection coverage intelligence.** Reused ARTEX's existing declared-scope asset denominator, untested-asset backlog, worker `record_coverage` tool and planner/wrap-up ledger. Added an explicit `test_failed` outcome (always an open gap), deterministic state assessment (`not_tested`, `tested_positive`, evidence-backed `tested_negative`, `not_applicable`, `partial`, `failed`, `stale`, `unknown`), and a conservative 30-day read-time freshness default while retaining the previous state for stale entries. Added migration 0015 and clean-schema support; see `docs/COLLECTION-COVERAGE-INTELLIGENCE.md`. Remaining: expose assessments in the operator UI, improve dimension-specific asset coverage beyond the current coarse fact-anchor signal, connect evidence to durable observation claims (Job 9), and run Go/PostgreSQL tests and migrations.
-- [ ] **P1 — Add evidence-backed enrichment.** Derive service/technology identification and asset relationships from observations; label inferred relationships and include supporting evidence and confidence rationale.
+- [~] **P1 — Add evidence-backed enrichment.** Added a deterministic read-only `enrichment.Derive` projection over existing asset records and `assetgraph.Correlate`: exposes recorded service names/types, HTTP metadata and technologies with source-field rationale; conventional port hints are explicitly low-confidence/inferred; relationship projections retain evidence/confidence/verification. Remaining: link outputs to immutable observation/evidence claims, integrate with existing reasoning/API/operator UI, and test confidence/rationale against real evidence. See `docs/WORK-QUEUE-AUDIT.md`.
 - [ ] **P1 — Generate useful next-collection actions.** Recommend the next safe, in-scope collection step based on coverage gaps, asset context, expected information gain and tool capability. Explain why; never bypass target/scope/approval/egress controls.
 - [ ] **P2 — Improve recon orchestration.** Have planner/worker runs share collection context, avoid repeating completed work, detect stale or contradictory observations, and feed results back into the graph with traceable lineage.
 - [ ] **P2 — Add operator-facing intelligence views.** Surface asset relationships, collection coverage, evidence freshness, confidence and recommended next steps in the existing UI/API.
@@ -130,7 +130,7 @@ The canonical observation schema and first parser projections are committed. The
 10. **P2 — Improve recon orchestration, operator intelligence views and VEQ.**
 11. **Maintenance — Validate marketplace, collections and review workflow.** Fix defects/security issues; no further feature expansion until intelligence milestones progress.
 
-There are **10 substantive jobs remaining** in this sequence, plus ongoing maintenance. This is a work-plan count, not a delivery estimate; several jobs contain multiple implementation and validation steps.
+This is a **condensed sequence of workstreams, not a complete job countdown**. It is not an accurate count of all remaining work: the roadmap contains 16 broad capability workstreams plus cross-cutting testing, security, integration and release tasks, and several numbered entries bundle multiple independently deliverable jobs. See `docs/WORK-QUEUE-AUDIT.md` for the expanded remaining backlog.
 
 ## Status reporting rules
 
@@ -214,3 +214,17 @@ Design document: `docs/OBSERVATION-PERSISTENCE-DESIGN.md`. No migration was crea
 - [ ] Run Go unit tests, PostgreSQL integration tests and clean/upgrade migration checks. None were executed for this work.
 
 **Job 6 is in progress, not complete.** This is an additive backend improvement to the existing ARTEX coverage system; the normal program and marketplace execution/permissions are unchanged.
+
+
+### Job 5 progress — evidence-backed enrichment (2026-11-20)
+
+- [x] Add a deterministic read-only projection over existing ARTEX asset records.
+- [x] Surface explicitly recorded service names/types, HTTP status/title and technology labels with source-field rationale.
+- [x] Add conservative conventional-port service hints, always labeled inferred and low confidence; a port number alone is not treated as service identification.
+- [x] Reuse existing explainable asset graph relationships and retain evidence/rationale, confidence and observed/inferred verification labels.
+- [ ] Link projections to immutable evidence/observation claim IDs once Job 9 persistence is implemented.
+- [ ] Integrate enrichment into the existing agent reasoning, authenticated API and operator intelligence UI.
+- [ ] Add evidence/confidence tests against real DB fixtures and end-to-end tool-output-to-enrichment tests; run Go tests/build.
+- [ ] Verify no changes regress the regular ARTEX execution path.
+
+**Job 5 is partially implemented, not complete.** The new `enrichment` package is a read-only projection and does not persist or promote inferred values into canonical assets/findings. Full remaining-work audit: `docs/WORK-QUEUE-AUDIT.md`.
