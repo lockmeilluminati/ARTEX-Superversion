@@ -43,6 +43,16 @@ func TestObservationClaimPersistenceAndReplay(t *testing.T) {
 		TaskID: &task.ID, CollectionRunID: &runID, SourceToolID: "external.nmap",
 		OriginalName: "scan.xml",
 	}); err != nil { t.Fatal(err) }
+	// An artifact cannot be attached to a run under a different tool identity.
+	mismatched := EvidenceArtifactMetadata{
+		ID: evidenceID, SHA256: digest, ByteLength: 12,
+		MediaType: "application/xml", StorageKey: "sha256/" + digest + "-mismatch",
+		TaskID: &task.ID, CollectionRunID: &runID, SourceToolID: "external.nuclei",
+		OriginalName: "scan.xml",
+	}
+	if err := d.RegisterEvidenceArtifactMetadata(ctx, mismatched); err == nil || !strings.Contains(err.Error(), "do not match") {
+		t.Fatalf("mismatched source tool registration error=%v, want run mismatch", err)
+	}
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	o := normalizer.Observation{
