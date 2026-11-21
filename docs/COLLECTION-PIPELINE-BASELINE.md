@@ -85,3 +85,14 @@ This is a source-level baseline, not an end-to-end verification. It records what
 - Each edge includes source/target asset IDs, a relation label, the exact field-level rationale, confidence and an observed/inferred marker.
 - The correlator deliberately does not infer edges from shared company/task membership, subnet proximity or technology strings alone. It does not mutate assets or claim that inferred endpoint/service origin matches are direct observations.
 - Current limitation: this is a pure package and is not yet wired to DB loading, findings, evidence claims, an authenticated API or UI. Once Job 9 observation persistence is implemented, edges should reference supporting claim IDs and preserve conflicting claims instead of collapsing them.
+
+
+## Collection coverage intelligence (Job 6)
+
+- The regular ARTEX program already has an asset coverage denominator/backlog in `db/task_assets_context.go`, and a worker-reported risk-class ledger in `db/coverage_ledger.go` exposed through `record_coverage` and planner wrap-up context.
+- The asset coverage signal is intentionally described as coarse: a fact anchor means the asset was investigated, not that every vulnerability or discovery dimension was tested.
+- Job 6 adds the explicit `test_failed` outcome, which remains an open gap; it cannot be interpreted as a clean/negative result.
+- `AssessCoverageEntry` classifies absent entries as `not_tested`, findings as `tested_positive`, evidence-backed negative entries as `tested_negative`, ruled-out/not-applicable entries with reasons as `not_applicable`, follow-up as `partial`, failed attempts as `failed`, stale prior results as `stale` (retaining the prior state), and missing/invalid provenance as `unknown`.
+- The DB ledger read attaches derived assessments using a conservative 30-day default. The pure assessment helper accepts a caller-selected freshness window. No stored timestamp is rewritten.
+- Migration `0015_coverage_failure_and_freshness.sql` extends the existing outcome constraint; `db/schema.sql` supports clean database creation. This does not alter normal task execution, asset writes, scope gates, approval or egress.
+- Remaining: operator UI/API state filters, dimension-specific evidence beyond fact anchors, durable evidence claim links (Job 9), and executed Go/PostgreSQL/migration tests. No tests or migrations were run in this work session.
