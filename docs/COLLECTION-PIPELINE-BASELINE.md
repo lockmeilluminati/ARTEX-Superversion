@@ -69,6 +69,28 @@ This is a source-level baseline, not an end-to-end verification. It records what
 4. Extend parser coverage only for missing high-value formats after the local command inventory.
 5. Define the canonical observation contract using the verified pipeline, without duplicating the existing asset, exploration or finding stores.
 
+
+## Repeatable operator verification (added 2026-11-20)
+
+Run these checks on the **same host/container that executes ARTEX worker commands**. A developer workstation inventory is not evidence about a remote worker.
+
+1. Inventory candidate binaries without installing or scanning anything:
+   `bash scripts/inventory-collection-tools.sh`
+   Use `--strict` when the deployment expects every listed candidate to be installed. The script reports command path and the tool-specific version output for Nmap, Nuclei, httpx, Katana, ffuf, Dalfox and BBot. A missing binary is a deployment fact, not a parser failure; do not install tools automatically as part of verification.
+2. Run focused parser/normalizer tests: `go test ./normalizer ./agent`. Then run the repository gate with a configured test PostgreSQL service: `bash scripts/verify.sh --go-only`. Record the Go version, PostgreSQL version and test output. Do not report a pass when tests were skipped due to missing configuration.
+3. In an explicitly authorized disposable lab, confirm the worker has `ingest_scan_output` and/or `ingest_bbot` enabled and bound. Use each installed scanner's own help/version output to confirm flags before running it. Write output beneath the active task working directory, then invoke the matching ingestion tool:
+   - Nmap XML: `-oX <working-dir-relative-file>` → format `nmap-xml`.
+   - Nuclei JSONL: `-jsonl -o <working-dir-relative-file>` → format `nuclei-jsonl`.
+   - httpx JSON: `-json -o <working-dir-relative-file>` → format `httpx-jsonl`.
+   - ffuf JSON: `-of json -o <working-dir-relative-file>` → format `ffuf-json`.
+   - BBot: use its configured JSONL output file → `ingest_bbot`.
+4. For each exercised format, record the command/tool version, output filename and checksum, ingestion response counts, database asset/fact IDs, task association and scope outcome. Repeat ingestion of the same artifact and confirm replay behavior. Confirm out-of-scope BBot events remain third-party facts and do not enter assets/task scope.
+5. In the authenticated ARTEX UI, refresh the Assets view and confirm the persisted records appear. The current UI has manual refresh; automatic scanner-completion refresh is not yet established.
+
+Do not run active scans against public or third-party targets for this check. The command inventory and source-level parser tests are safe preparatory checks; end-to-end verification must use an explicitly authorized lab.
+
+**Evidence record:** no scanner inventory, parser test, PostgreSQL test, live command-to-ingestion run or UI refresh has been executed by this repository-edit session. The helper and procedure make the checks repeatable but do not change the pipeline's operational status.
+
 ## Safety and interpretation
 
 - A tool listed in the marketplace is not necessarily installed, verified, enabled, bound or executable.
