@@ -363,6 +363,16 @@ func TestAddFactIfAbsentConcurrentReplay(t *testing.T) {
 		t.Fatalf("want one persisted exact fact, got %d", count)
 	}
 
+	// Different ancillary evidence/confidence metadata must not create a
+	// second fact when the canonical source/summary/detail identity is unchanged.
+	replayID, inserted, err := d.Exploration(expID).AddFactIfAbsent(
+		map[string]any{"summary": "same scanner result", "source": "tool_output", "evidence": "a different supporting line", "confidence": "inferred"},
+		5, "confirmed", "another-adapter", nil,
+	)
+	if err != nil || inserted || replayID != canonicalID {
+		t.Fatalf("same canonical fact should replay despite metadata differences: id=%d inserted=%v err=%v", replayID, inserted, err)
+	}
+
 	// A changed detail is a distinct observation and must not be collapsed.
 	otherID, inserted, err := d.Exploration(expID).AddFactIfAbsent(
 		map[string]any{"summary": "same scanner result", "source": "tool_output", "detail": "different evidence"},
