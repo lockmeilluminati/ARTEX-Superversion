@@ -11,7 +11,7 @@ Use the project checklist as the operational punch list and the roadmap as the f
 ## Remaining intelligence work
 
 1. Operationally verify the actual collection pipeline, scanner binaries, versions and command-to-output-to-ingestion path.
-2. Complete canonical observation provenance and persistence: real execution IDs, immutable evidence IDs/digests, append-only claims linked to existing assets/findings/facts.
+2. Complete canonical observation provenance and persistence. Committed migrations 0016–0017 and DB primitives now create collection-run rows, evidence metadata and append-only claims with exact-replay/collision handling. Still missing: immutable blob registration in the existing evidence package, real process-boundary run-ID wiring, adapter integration, transactional projection links and executed PostgreSQL lifecycle tests.
 3. Finish concurrency-safe idempotent ingestion, preserve conflicting claims and first/last-seen/source lineage, and test malformed, truncated, partial, empty and replay cases.
 4. Integrate asset correlation with durable evidence claims and findings; add bounded DB loading and authenticated graph API/UI.
 5. Complete collection coverage: operator API/UI, per-asset/per-dimension evidence, durable evidence references, freshness policy and tests.
