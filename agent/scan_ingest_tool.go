@@ -188,14 +188,14 @@ func (t *ToolSet) runScanIngest(ctx context.Context, in json.RawMessage, tc *act
 // on replay; AddFactIfAbsent serializes canonical source/summary/detail identity.
 func (t *ToolSet) recordIngestFacts(facts []factItem) (written, existing int, errs []string, err error) {
 	for _, f := range facts {
-		before := t.writes.Facts
-		if _, err := t.recordOneFact(f, t.ownerNode); err != nil {
+		_, inserted, err := t.recordOneFact(f, t.ownerNode)
+		if err != nil {
 			if len(errs) < scanNotableMax {
 				errs = append(errs, err.Error())
 			}
 			continue
 		}
-		if t.writes.Facts > before {
+		if inserted {
 			written++
 		} else {
 			existing++
