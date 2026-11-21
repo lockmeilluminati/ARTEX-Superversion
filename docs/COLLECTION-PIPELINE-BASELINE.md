@@ -76,3 +76,12 @@ This is a source-level baseline, not an end-to-end verification. It records what
 - An asset's presence does not prove it was tested; absence does not prove a negative result.
 - Compatibility, catalogue visibility and collection recommendations never bypass target scope, approval, interception or egress controls.
 - This document does not claim a scanner run, database migration, build or automated test was executed.
+
+
+## Attack-surface relationship correlation (Job 7 initial implementation)
+
+- `assetgraph.Correlate([]db.Asset)` derives a deterministic, read-only edge projection from existing asset records.
+- Supported relationships are root-domain membership, subdomain-to-IP resolution, service/endpoint host association, and endpoint-to-HTTP-service origin association.
+- Each edge includes source/target asset IDs, a relation label, the exact field-level rationale, confidence and an observed/inferred marker.
+- The correlator deliberately does not infer edges from shared company/task membership, subnet proximity or technology strings alone. It does not mutate assets or claim that inferred endpoint/service origin matches are direct observations.
+- Current limitation: this is a pure package and is not yet wired to DB loading, findings, evidence claims, an authenticated API or UI. Once Job 9 observation persistence is implemented, edges should reference supporting claim IDs and preserve conflicting claims instead of collapsing them.
