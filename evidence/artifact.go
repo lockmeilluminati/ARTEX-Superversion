@@ -25,8 +25,8 @@ type Artifact struct {
 	CapturedAt time.Time `json:"captured_at"`
 }
 
-// openCollectionArtifact resolves a regular file beneath root. Symlinks are
-// resolved before opening and the resolved path must remain inside the root.
+// openCollectionArtifact opens a regular file beneath root using os.Root so path
+// resolution remains confined even if a symlink is swapped during the open.
 func openCollectionArtifact(root, name string) (*os.File, fs.FileInfo, error) {
 	if strings.TrimSpace(root) == "" || strings.TrimSpace(name) == "" {
 		return nil, nil, errors.New("artifact root and path are required")
@@ -40,21 +40,28 @@ func openCollectionArtifact(root, name string) (*os.File, fs.FileInfo, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("resolve artifact root: %w", err)
 	}
-	candidate := name
-	if !filepath.IsAbs(candidate) {
-		candidate = filepath.Join(realRoot, candidate)
+	rel := name
+	if filepath.IsAbs(name) {
+		rel, err = filepath.Rel(realRoot, filepath.Clean(name))
+		if err != nil {
+			return nil, nil, errors.New("artifact path is outside its run directory")
+		}
 	}
-	realPath, err := filepath.EvalSymlinks(candidate)
+	if !filepath.IsLocal(rel) {
+		return nil, nil, errors.New("artifact path is outside its run directory")
+	}
+
+	// os.Root performs path resolution relative to an opened directory and
+	// prevents symlink swaps from escaping the run directory between validation
+	// and open. EvalSymlinks + os.Open would leave that TOCTOU window exposed.
+	dir, err := os.OpenRoot(realRoot)
 	if err != nil {
-		return nil, nil, errors.New("artifact path does not exist beneath its run directory")
+		return nil, nil, fmt.Errorf("open artifact run directory: %w", err)
 	}
-	rel, err := filepath.Rel(realRoot, realPath)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return nil, nil, errors.New("artifact path resolves outside its run directory")
-	}
-	f, err := os.Open(realPath)
+	defer dir.Close()
+	f, err := dir.Open(rel)
 	if err != nil {
-		return nil, nil, errors.New("artifact file cannot be opened")
+		return nil, nil, errors.New("artifact path cannot be opened beneath its run directory")
 	}
 	info, err := f.Stat()
 	if err != nil || !info.Mode().IsRegular() {
