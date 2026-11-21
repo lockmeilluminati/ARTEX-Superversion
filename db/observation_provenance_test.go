@@ -66,6 +66,21 @@ func TestObservationClaimPersistenceAndReplay(t *testing.T) {
 	if err := o.AssignIDs(); err != nil { t.Fatal(err) }
 	inserted, err := d.InsertObservationClaim(ctx, o, evidenceID, ObservationClaimLink{})
 	if err != nil || !inserted { t.Fatalf("first insert=%v err=%v", inserted, err) }
+
+	// A claim cannot borrow a valid artifact while asserting another tool or task.
+	wrongTool := o
+	wrongTool.SourceToolID = "external.nuclei"
+	if err := wrongTool.AssignIDs(); err != nil { t.Fatal(err) }
+	if _, err := d.InsertObservationClaim(ctx, wrongTool, evidenceID, ObservationClaimLink{}); err == nil {
+		t.Fatal("claim with mismatched source tool was accepted")
+	}
+	wrongTask := o
+	wrongTask.TaskID = task.ID + 999
+	if err := wrongTask.AssignIDs(); err != nil { t.Fatal(err) }
+	if _, err := d.InsertObservationClaim(ctx, wrongTask, evidenceID, ObservationClaimLink{}); err == nil {
+		t.Fatal("claim with mismatched task was accepted")
+	}
+
 	inserted, err = d.InsertObservationClaim(ctx, o, evidenceID, ObservationClaimLink{})
 	if err != nil || inserted { t.Fatalf("replay insert=%v err=%v", inserted, err) }
 
