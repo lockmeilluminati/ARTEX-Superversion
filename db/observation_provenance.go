@@ -184,8 +184,16 @@ INSERT INTO observation_claims
 SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::uuid,$12,$13,
        $14::uuid,$15,$16,$17,$18,$19,$20::jsonb,$21::jsonb,$22,$23,$24
 WHERE EXISTS (
- SELECT 1 FROM evidence_artifacts ea
- WHERE ea.id=$14::uuid AND ea.sha256=$15 AND ea.collection_run_id=$11::uuid
+ SELECT 1
+ FROM evidence_artifacts ea
+ JOIN collection_runs cr ON cr.id=ea.collection_run_id
+ WHERE ea.id=$14::uuid
+   AND ea.sha256=$15
+   AND ea.collection_run_id=$11::uuid
+   AND ea.task_id=$12
+   AND ea.source_tool_id=$9
+   AND cr.task_id=$12
+   AND cr.source_tool_id=$9
 )
 ON CONFLICT (observation_id) DO NOTHING`,
 		o.ObservationID, o.IdentityKey, string(o.Type), o.Target, port, o.Protocol, o.Name, o.Value,
