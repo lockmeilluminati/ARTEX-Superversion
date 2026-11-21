@@ -173,7 +173,7 @@ Design document: `docs/OBSERVATION-PERSISTENCE-DESIGN.md`. No migration was crea
 - [x] Consolidate scanner and BBot fact persistence on one exact-replay deduplication path.
 - [x] Apply the same deduplication rule to BBot third-party intelligence facts; repeated ingestion of the same source, summary and detail is counted as existing rather than appended again.
 - [x] Preserve distinct facts when their source, summary or detail differs; this avoids silently overwriting differing observations.
-- [x] Add a PostgreSQL-backed BBot replay assertion for zero new facts and the expected existing count.
+- [x] Add PostgreSQL-backed BBot assertions for exact replay (zero new facts) and distinct payload preservation (same summary, different detail remains a separate fact).
 - [~] Existing asset upserts remain idempotent through the asset store; scanner and BBot parsers already bound file/line sizes and preserve complete records from supported partial/truncated inputs.
 - [ ] Add database-enforced, concurrency-safe idempotency (the current shared helper checks the exploration graph before writing and is not an atomic uniqueness guarantee under concurrent ingesters).
 - [ ] Verify last-seen and source-lineage update semantics without erasing contradictory source claims; complete observation-claim persistence remains gated by Job 9.
