@@ -145,6 +145,13 @@ func TestCollectionRunLifecycleTransitions(t *testing.T) {
 		SourceToolID: "external.nmap", ExecutionMode: "cli", Status: "planned",
 	})
 	if err != nil { t.Fatal(err) }
+	var startIsNull bool
+	if err := d.QueryRowContext(ctx, `SELECT started_at IS NULL FROM collection_runs WHERE id=$1::uuid`, runID).Scan(&startIsNull); err != nil {
+		t.Fatal(err)
+	}
+	if !startIsNull {
+		t.Fatal("planned collection run has a start timestamp before process launch")
+	}
 	if err := d.FinishCollectionRun(ctx, runID, "succeeded", time.Now().UTC(), nil, "premature.xml"); err == nil {
 		t.Fatal("planned collection run was finalized before process start")
 	}
