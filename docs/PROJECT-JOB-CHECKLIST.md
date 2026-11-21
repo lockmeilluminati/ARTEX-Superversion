@@ -26,7 +26,7 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 - [~] **P0 — Baseline the real collection pipeline.** `docs/COLLECTION-PIPELINE-BASELINE.md` now traces `insert_assets` through fail-closed asset interception, typed upserts, task provenance and auto-scope; documents Nmap/Nuclei/httpx/ffuf and BBot parser code; and maps the asset/finding APIs to their UI views. Both `ingest_bbot` and `ingest_scan_output` are included in the default worker tool set. Remaining: verify local scanner binary availability and command-to-file-to-ingestion operation, run parser/DB fixtures, and confirm asset-view refresh behavior.
 - [~] **P0 — Define and integrate a canonical observation/evidence contract.** Added `normalizer.Observation`, explicit enums, provenance/evidence validation, stable identity/claim IDs and contract tests. Nmap/Nuclei/httpx/ffuf and BBot ingestion tools now return normalized observation projections alongside their existing writes; adapter tests cover provenance, port mapping and BBot scope separation. Still not durable observation persistence: run IDs are ARTEX ingestion-attempt IDs, evidence URIs are basename locator hints without immutable digest, and scanner scope remains unknown unless BBot explicitly establishes it. Run Go tests, review the live PostgreSQL/evidence schemas, and map projections to existing records before a migration. See `docs/OBSERVATION-EVIDENCE-CONTRACT.md`.
 - [ ] **P0 — Make ingestion reliable and idempotent.** Add parsers/adapters for the highest-value existing discovery outputs; validate inputs, handle partial/malformed results, deduplicate repeated observations and update last-seen/source lineage without losing history.
-- [ ] **P1 — Correlate the attack-surface graph.** Link domains↔IPs↔ports↔services↔URLs↔technologies↔findings with explainable edges and provenance. Resolve duplicates conservatively and retain conflicting observations rather than overwriting them.
+- [~] **P1 — Correlate the attack-surface graph.** Added a deterministic, read-only `assetgraph.Correlate` projection for explicit domain/root-domain, subdomain/IP, service/host and endpoint/service relationships. Every edge carries a relation, source-field rationale, confidence and observed/inferred label; company membership and subnet proximity alone never create edges. Unit fixtures cover supported links, conservative non-links and deterministic output. Remaining: connect persisted evidence/observation claims and findings, expose graph through authenticated API/UI, and run tests against real DB fixtures.
 - [ ] **P1 — Build collection coverage intelligence.** Track which assets and discovery dimensions have been checked, which are stale, what failed, and what remains unknown. Distinguish not-tested from tested-negative.
 - [ ] **P1 — Add evidence-backed enrichment.** Derive service/technology identification and asset relationships from observations; label inferred relationships and include supporting evidence and confidence rationale.
 - [ ] **P1 — Generate useful next-collection actions.** Recommend the next safe, in-scope collection step based on coverage gaps, asset context, expected information gain and tool capability. Explain why; never bypass target/scope/approval/egress controls.
@@ -181,3 +181,20 @@ Design document: `docs/OBSERVATION-PERSISTENCE-DESIGN.md`. No migration was crea
 - [ ] Add end-to-end partial-failure and cancellation/retry tests, then reconcile result counters with actual persisted outcomes.
 
 **Job 8 is in progress, not complete.** The change closes the BBot replay gap, but the graph-level check-then-insert is not concurrency-safe and the provenance/claim layer is not yet durable.
+
+
+### Job 7 progress — explainable attack-surface correlation (2026-11-20)
+
+- [x] Inspect the existing asset schema and confirm implicit domain/IP/service relationships already present in asset fields; do not create a second asset inventory.
+- [x] Add a pure deterministic correlation projection over existing `db.Asset` records.
+- [x] Add explainable edge metadata: source/target asset IDs, relation, exact supporting field rationale, confidence and observed/inferred status.
+- [x] Correlate root-domain membership, subdomain A/AAAA/IP links, service/endpoint host links and endpoint-to-HTTP-service origin links.
+- [x] Keep conservative boundaries: no edge from shared company, task, subnet proximity or technology label alone; no asset records are mutated.
+- [x] Add unit fixtures for expected links, no unsupported company/subnet links and deterministic ordering.
+- [ ] Add evidence/observation-claim IDs to edges once Job 9 persistence exists; retain multiple contradictory claims as separate provenance paths.
+- [ ] Add finding-to-asset links using the existing findings asset references; do not infer vulnerability-to-host links from summary text.
+- [ ] Add bounded database loading and an authenticated graph API with pagination/limits.
+- [ ] Add operator graph view and filters for observed vs inferred, confidence and evidence.
+- [ ] Run unit and PostgreSQL integration tests; no tests were executed for this commit.
+
+**Job 7 is in progress.** The initial correlation engine is committed, but it is a source-field projection only: edges are not persisted, evidence claim IDs are not yet attached, and no API/UI exposes the graph.
