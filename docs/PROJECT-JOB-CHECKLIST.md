@@ -149,3 +149,20 @@ Do not mark a feature tested, verified or operational solely because its code ha
 - Checked the execution environment: Go is `1.23.2`, while `go.mod` requires Go `1.26.10`; Node is `22.16.0` and npm is `10.9.2`. The repository could not be cloned because this environment cannot resolve `github.com`.
 - Re-inspected `agent/bbot_ingest_tool.go` and `agent/scan_ingest_tool.go`; the required imports are present in the current branch. This is a source inspection only, not a compile or test result.
 - **Job 10 remains blocked / not passed.** No Go tests, build, vet, frontend lint/typecheck/build, migration test, or marketplace runtime test was executed. Do not count this job down until a CI run or a suitable local environment provides successful evidence.
+
+
+### Job 9 progress — provenance and persistence design (2026-11-20)
+
+- [x] Review the current normalizer contract, scanner adapters, `RunInfo`, evidence store, asset schema and existing exploration persistence boundaries.
+- [x] Specify the collection-run lifecycle, with IDs created at actual process launch and propagated into ingestion; ingestion-attempt IDs must not masquerade as process IDs.
+- [x] Specify generic immutable scanner-artifact registration using the existing content-addressed evidence blob foundation, including digest/length verification, path confinement, retention and secret-safety requirements.
+- [x] Specify append-only observation claims linked to existing assets/findings/exploration nodes; identity keys are non-unique so contradictory claims survive.
+- [x] Specify replay/conflict semantics, transaction expectations, migration sequencing and acceptance tests.
+- [ ] Implement and test the collection-run lifecycle and actual run-ID propagation.
+- [ ] Implement generic evidence artifact metadata/registration and scanner artifact integration.
+- [ ] Review exact foreign-key targets and task/exploration lifecycle against the full schema before writing migrations.
+- [ ] Implement append-only observation claim persistence and transaction-aware projection links.
+- [ ] Add PostgreSQL integration tests for replay, conflicts, rollback and projection deletion.
+- [ ] Apply and verify migration only after schema review and tests.
+
+Design document: `docs/OBSERVATION-PERSISTENCE-DESIGN.md`. No migration was created or applied. **Job 9 remains in progress; design is committed, implementation and DB verification are not complete.**
