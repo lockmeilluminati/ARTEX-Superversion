@@ -117,3 +117,42 @@ func TestObservationClaimPersistenceAndReplay(t *testing.T) {
 	}
 	if count != 2 { t.Fatalf("claims with shared identity=%d, want 2", count) }
 }
+
+func TestCollectionRunLifecycleTransitions(t *testing.T) {
+	d, err := Open(testDSN(t))
+	if err != nil { SkipPGUnavailable(t, err) }
+	t.Cleanup(func() { d.Close() })
+	task, err := d.CreateTaskWithOptions("collection run lifecycle", "test", TaskCreateOptions{})
+	if err != nil { t.Fatal(err) }
+	t.Cleanup(func() { cleanupErr(t, "task", d.DeleteTask(task.ID)) })
+
+	ctx := context.Background()
+	runID, err := d.CreateCollectionRun(ctx, CollectionRun{
+		TaskID: task.ID, ExplorationID: &task.ExplorationID,
+		SourceToolID: "external.nmap", ExecutionMode: "cli", Status: "planned",
+	})
+	if err != nil { t.Fatal(err) }
+
+	started := time.Now().UTC().Truncate(time.Microsecond)
+	if err := d.StartCollectionRun(ctx, runID, started); err != nil {
+		t.Fatalf("start planned run: %v", err)
+	}
+	var status string
+	var storedStart time.Time
+	if err := d.QueryRowContext(ctx, `SELECT status, started_at FROM collection_runs WHERE id=$1::uuid`, runID).Scan(&status, &storedStart); err != nil {
+		t.Fatal(err)
+	}
+	if status != "running" || !storedStart.Equal(started) {
+		t.Fatalf("run state=(%q,%s), want (running,%s)", status, storedStart, started)
+	}
+	if err := d.StartCollectionRun(ctx, runID, started.Add(time.Second)); err == nil {
+		t.Fatal("duplicate process start was accepted")
+	}
+	exitCode := 0
+	if err := d.FinishCollectionRun(ctx, runID, "succeeded", started.Add(time.Minute), &exitCode, "output.xml"); err != nil {
+		t.Fatalf("finish running run: %v", err)
+	}
+	if err := d.StartCollectionRun(ctx, runID, started.Add(2*time.Minute)); err == nil {
+		t.Fatal("terminal collection run was restarted")
+	}
+}
