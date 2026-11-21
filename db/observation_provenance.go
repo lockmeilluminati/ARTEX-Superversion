@@ -61,6 +61,12 @@ func (d *DB) CreateCollectionRun(ctx context.Context, run CollectionRun) (string
 	if strings.TrimSpace(run.SourceToolID) == "" { return "", errors.New("source tool id is required") }
 	if run.ExecutionMode == "" { run.ExecutionMode = "unknown" }
 	if run.Status == "" { run.Status = "planned" }
+	if run.Status != "planned" {
+		return "", errors.New("new collection run must start in planned status")
+	}
+	if run.FinishedAt != nil || run.ExitCode != nil {
+		return "", errors.New("new collection run cannot have terminal execution fields")
+	}
 	if run.StartedAt.IsZero() { run.StartedAt = time.Now().UTC() }
 	if len(run.Metadata) == 0 { run.Metadata = json.RawMessage(`{}`) }
 	if !json.Valid(run.Metadata) || len(run.Metadata) > 64*1024 { return "", errors.New("collection run metadata must be valid JSON under 64 KiB") }
