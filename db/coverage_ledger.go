@@ -23,7 +23,7 @@ const (
 	OutcomeRuledOut      = "ruled_out"
 	OutcomeNotApplicable = "not_applicable"
 	OutcomeNeedsFollowUp = "needs_follow_up"
-	OutcomeTestFailed     = "test_failed"
+	OutcomeTestFailed = "test_failed"
 )
 
 // Gap kinds.
@@ -53,7 +53,7 @@ const (
 	MaxCoverageRowsPerTask = 2000
 )
 
-// ValidCoverageOutcome reports whether o is one of the five ledger outcomes.
+// ValidCoverageOutcome reports whether o is one of the six ledger outcomes.
 func ValidCoverageOutcome(o string) bool {
 	switch o {
 	case OutcomeReported, OutcomeNoIssueFound, OutcomeRuledOut, OutcomeNotApplicable, OutcomeNeedsFollowUp, OutcomeTestFailed:
@@ -132,7 +132,7 @@ func normalizeCoverageEntry(e CoverageEntry) (CoverageEntry, error) {
 		return e, fmt.Errorf("task, surface and risk_area are required")
 	}
 	if !ValidCoverageOutcome(e.Outcome) {
-		return e, fmt.Errorf("outcome must be one of reported, no_issue_found, ruled_out, not_applicable, needs_follow_up")
+		return e, fmt.Errorf("outcome must be one of reported, no_issue_found, ruled_out, not_applicable, needs_follow_up, test_failed")
 	}
 	for _, f := range []struct {
 		name, v string
@@ -388,9 +388,17 @@ func AssessCoverageEntry(e *CoverageEntry, now time.Time, maxAge time.Duration) 
 	case OutcomeReported:
 		a.State = CoverageTestedPositive
 	case OutcomeNoIssueFound:
-		if strings.TrimSpace(e.Evidence) == "" { a.State = CoverageUnknown } else { a.State = CoverageTestedNegative }
+		if strings.TrimSpace(e.Evidence) == "" {
+			a.State = CoverageUnknown
+		} else {
+			a.State = CoverageTestedNegative
+		}
 	case OutcomeRuledOut, OutcomeNotApplicable:
-		if strings.TrimSpace(e.Reason) == "" { a.State = CoverageUnknown } else { a.State = CoverageNotApplicable }
+		if strings.TrimSpace(e.Reason) == "" {
+			a.State = CoverageUnknown
+		} else {
+			a.State = CoverageNotApplicable
+		}
 	case OutcomeNeedsFollowUp:
 		a.State = CoveragePartial
 	case OutcomeTestFailed:
