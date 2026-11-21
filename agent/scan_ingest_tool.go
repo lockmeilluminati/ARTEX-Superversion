@@ -183,9 +183,27 @@ func (t *ToolSet) runScanIngest(ctx context.Context, in json.RawMessage, tc *act
 	return jsonResult(out)
 }
 
-// recordIngestFacts writes facts not already present in this exploration. Exact
-// source+summary+detail replays are counted as existing; differing payloads remain
-// separate facts so conflicting observations are not silently overwritten.
+// recordIngestFacts routes every candidate through the atomic database identity
+// check. A read-then-write cache races across adapters and bypasses anchor union
+// on replay; AddFactIfAbsent serializes canonical source/summary/detail identity.
+func (t *ToolSet) recordIngestFacts(facts []factItem) (written, existing int, errs []string, err error) {
+	for _, f := range facts {
+		before := t.writes.Facts
+		if _, err := t.recordOneFact(f, t.ownerNode); err != nil {
+			if len(errs) < scanNotableMax {
+				errs = append(errs, err.Error())
+			}
+			continue
+		}
+		if t.writes.Facts > before {
+			written++
+		} else {
+			existing++
+		}
+	}
+	return written, existing, errs, nil
+}
+
 func (t *ToolSet) recordIngestFacts(facts []factItem) (written, existing int, errs []string, err error) {
 	seen := map[string]bool{}
 	key := func(source, summary, detail string) string { return source + "\x00" + summary + "\x00" + detail }
