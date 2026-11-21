@@ -30,12 +30,10 @@ type edgeKey struct { from, to int64; relation string }
 // Shared company, task membership, subnet proximity and technology labels are
 // deliberately not sufficient to create an edge.
 func Correlate(assets []db.Asset) []Edge {
-	byID := make(map[int64]db.Asset, len(assets))
 	domains := map[string]int64{}
 	ips := map[string]int64{}
 	services := make(map[string]int64)
 	for _, a := range assets {
-		byID[a.ID] = a
 		switch a.Type {
 		case "root_domain", "subdomain":
 			if k := domainKey(a.Domain); k != "" {
