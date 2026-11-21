@@ -84,15 +84,15 @@ func parseBbotJSONL(r io.Reader) (bbotIngest, error) {
 			} else {
 				seen++
 				var raw bbotRawEvent
-			if json.Unmarshal(line, &raw) != nil {
-				out.Skipped++
-			} else if ev := bbotTyped(raw); raw.ScopeDistance != nil && *raw.ScopeDistance == 0 {
-				ev.Source = factSourceToolOutput
-				out.InScope = append(out.InScope, ev)
-			} else {
-				ev.Source = factSourceThirdPartyIntel
-				out.Intel = append(out.Intel, ev)
-			}
+				if json.Unmarshal(line, &raw) != nil {
+					out.Skipped++
+				} else if ev := bbotTyped(raw); raw.ScopeDistance != nil && *raw.ScopeDistance == 0 {
+					ev.Source = factSourceToolOutput
+					out.InScope = append(out.InScope, ev)
+				} else {
+					ev.Source = factSourceThirdPartyIntel
+					out.Intel = append(out.Intel, ev)
+				}
 			}
 		}
 		if errors.Is(err, io.EOF) {
