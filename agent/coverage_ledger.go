@@ -21,7 +21,7 @@ func (t *ToolSet) recordCoverage() actool.CoreTool {
 		obj(map[string]any{
 			"surface":   str("what was examined: a URL, endpoint, parameter, host or feature"),
 			"risk_area": str("risk class, e.g. sqli, xss, idor"),
-			"outcome":   map[string]any{"type": "string", "enum": []string{db.OutcomeReported, db.OutcomeNoIssueFound, db.OutcomeRuledOut, db.OutcomeNotApplicable, db.OutcomeNeedsFollowUp}, "description": "result for this surface and risk class"},
+			"outcome":   map[string]any{"type": "string", "enum": []string{db.OutcomeReported, db.OutcomeNoIssueFound, db.OutcomeRuledOut, db.OutcomeNotApplicable, db.OutcomeNeedsFollowUp, db.OutcomeTestFailed}, "description": "result for this surface and risk class; use test_failed when the attempt could not complete, never report that as a negative result"},
 			"evidence":  str("required for no_issue_found: a fact id, intent id or traffic id that shows the test"),
 			"reason":    str("required for ruled_out and not_applicable: why"),
 		}, "surface", "risk_area", "outcome"),
