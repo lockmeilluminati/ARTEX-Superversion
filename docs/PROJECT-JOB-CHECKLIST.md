@@ -27,7 +27,7 @@ The marketplace is a core operator and agent-facing surface for a shared tool ec
 - [~] **P0 — Define and integrate a canonical observation/evidence contract.** Added `normalizer.Observation`, explicit enums, provenance/evidence validation, stable identity/claim IDs and contract tests. Nmap/Nuclei/httpx/ffuf and BBot ingestion tools now return normalized observation projections alongside their existing writes; adapter tests cover provenance, port mapping and BBot scope separation. Still not durable observation persistence: run IDs are ARTEX ingestion-attempt IDs, evidence URIs are basename locator hints without immutable digest, and scanner scope remains unknown unless BBot explicitly establishes it. Run Go tests, review the live PostgreSQL/evidence schemas, and map projections to existing records before a migration. See `docs/OBSERVATION-EVIDENCE-CONTRACT.md`.
 - [ ] **P0 — Make ingestion reliable and idempotent.** Add parsers/adapters for the highest-value existing discovery outputs; validate inputs, handle partial/malformed results, deduplicate repeated observations and update last-seen/source lineage without losing history.
 - [~] **P1 — Correlate the attack-surface graph.** Added a deterministic, read-only `assetgraph.Correlate` projection for explicit domain/root-domain, subdomain/IP, service/host and endpoint/service relationships. Every edge carries a relation, source-field rationale, confidence and observed/inferred label; company membership and subnet proximity alone never create edges. Unit fixtures cover supported links, conservative non-links and deterministic output. Remaining: connect persisted evidence/observation claims and findings, expose graph through authenticated API/UI, and run tests against real DB fixtures.
-- [ ] **P1 — Build collection coverage intelligence.** Track which assets and discovery dimensions have been checked, which are stale, what failed, and what remains unknown. Distinguish not-tested from tested-negative.
+- [~] **P1 — Build collection coverage intelligence.** Reused ARTEX's existing declared-scope asset denominator, untested-asset backlog, worker `record_coverage` tool and planner/wrap-up ledger. Added an explicit `test_failed` outcome (always an open gap), deterministic state assessment (`not_tested`, `tested_positive`, evidence-backed `tested_negative`, `not_applicable`, `partial`, `failed`, `stale`, `unknown`), and a conservative 30-day read-time freshness default while retaining the previous state for stale entries. Added migration 0015 and clean-schema support; see `docs/COLLECTION-COVERAGE-INTELLIGENCE.md`. Remaining: expose assessments in the operator UI, improve dimension-specific asset coverage beyond the current coarse fact-anchor signal, connect evidence to durable observation claims (Job 9), and run Go/PostgreSQL tests and migrations.
 - [ ] **P1 — Add evidence-backed enrichment.** Derive service/technology identification and asset relationships from observations; label inferred relationships and include supporting evidence and confidence rationale.
 - [ ] **P1 — Generate useful next-collection actions.** Recommend the next safe, in-scope collection step based on coverage gaps, asset context, expected information gain and tool capability. Explain why; never bypass target/scope/approval/egress controls.
 - [ ] **P2 — Improve recon orchestration.** Have planner/worker runs share collection context, avoid repeating completed work, detect stale or contradictory observations, and feed results back into the graph with traceable lineage.
@@ -198,3 +198,19 @@ Design document: `docs/OBSERVATION-PERSISTENCE-DESIGN.md`. No migration was crea
 - [ ] Run unit and PostgreSQL integration tests; no tests were executed for this commit.
 
 **Job 7 is in progress.** The initial correlation engine is committed, but it is a source-field projection only: edges are not persisted, evidence claim IDs are not yet attached, and no API/UI exposes the graph.
+
+
+### Job 6 progress — collection coverage intelligence (2026-11-20)
+
+- [x] Reuse the existing ARTEX asset-coverage denominator/backlog and risk-class ledger; do not create a second asset or coverage store.
+- [x] Preserve the distinction between a missing ledger entry (not tested) and an evidence-backed negative result.
+- [x] Add explicit `test_failed` ledger outcome and classify it as a gap, never as a negative result.
+- [x] Add pure assessment states for not tested, positive, evidence-backed negative, not applicable, partial, failed, stale and unknown; stale assessments retain their previous state.
+- [x] Add a 30-day default read-time freshness assessment without rewriting historical timestamps; callers of the pure helper can choose another window.
+- [x] Add clean-schema support and additive migration 0015; document compatibility with the normal ARTEX task/agent execution path.
+- [ ] Add authenticated operator API/UI presentation and filters for state/freshness.
+- [ ] Replace or supplement the coarse fact-anchor asset-tested signal with dimension-specific evidence-backed coverage; a fact anchor alone does not prove each discovery dimension was tested.
+- [ ] Link coverage evidence to durable observation/evidence claim IDs after Job 9 persistence.
+- [ ] Run Go unit tests, PostgreSQL integration tests and clean/upgrade migration checks. None were executed for this work.
+
+**Job 6 is in progress, not complete.** This is an additive backend improvement to the existing ARTEX coverage system; the normal program and marketplace execution/permissions are unchanged.
