@@ -176,4 +176,34 @@ func TestIngestBbotScopeSplit(t *testing.T) {
 	if factCount != 3 {
 		t.Fatalf("replay created duplicate facts: got %d, want 3", factCount)
 	}
+
+	// Same identity/summary with a different source payload is retained as a
+	// separate observation instead of being overwritten by the replay guard.
+	conflict := `{"type":"DNS_NAME","data":"a newer observation from another module","host":"bbot-intel.example.net","scope_distance":1,"module":"new-module"}` + "\n"
+	if err := os.WriteFile(path, append([]byte(bbotToolFixture), []byte(conflict)...), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	res, err = tsx.ingestBbot().Call(context.Background(), input, &actool.ToolContext{WorkingDir: runDir})
+	if err != nil || res.IsError {
+		t.Fatalf("conflicting observation ingest_bbot: %v %s", err, res.Flatten())
+	}
+	if err := json.Unmarshal([]byte(res.Flatten()), &out); err != nil {
+		t.Fatalf("conflicting observation result %q: %v", res.Flatten(), err)
+	}
+	if out.IntelFacts != 1 || out.IntelFactsExisting != 3 {
+		t.Fatalf("conflicting payload counts = written %d existing %d; want 1 and 3", out.IntelFacts, out.IntelFactsExisting)
+	}
+	all, err = store.ListByKind(db.KindFact, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	factCount = 0
+	for _, n := range all {
+		if n.Origin == "worker-1" {
+			factCount++
+		}
+	}
+	if factCount != 4 {
+		t.Fatalf("distinct observation payload was not preserved: got %d facts, want 4", factCount)
+	}
 }
