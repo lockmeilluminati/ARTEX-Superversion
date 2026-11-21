@@ -120,7 +120,7 @@ The canonical observation schema and first parser projections are committed. The
 
 1. **P0 — Verify the collection pipeline operationally (NEXT).** Run `go test ./normalizer ./agent`, then the full Go build/test/vet suite; validate scanner binaries and versions; exercise command → output → parser → adapter → existing DB writes; verify asset UI refresh.
 2. **P0 — Complete observation provenance and persistence design.** Replace ingestion-attempt IDs with actual execution IDs where available; replace basename evidence hints with immutable evidence-store references/digests; review the proposed claim-link mapping against existing DB schemas. Do not apply a migration until evidence storage and lineage are verified.
-3. **P0 — Make ingestion reliable and idempotent.** Cover malformed, partial, truncated and replayed files; ensure deduplication preserves conflicting claims and updates last-seen/source lineage correctly.
+3. **P0 — Make ingestion reliable and idempotent.** [~] Shared exact-payload replay deduplication now covers scanner facts and BBot third-party intelligence facts; a PostgreSQL replay test is added. Remaining: DB-level concurrency-safe idempotency, conflict/last-seen/source-lineage persistence, and full malformed/partial/truncated/replay test execution.
 4. **P1 — Correlate the attack-surface graph.** Add explainable links with provenance and retain contradictory observations.
 5. **P1 — Build collection coverage intelligence.** Distinguish not-tested, tested-negative, partial and failed collection.
 6. **P1 — Add evidence-backed enrichment and safe next-collection recommendations.**
@@ -166,3 +166,18 @@ Do not mark a feature tested, verified or operational solely because its code ha
 - [ ] Apply and verify migration only after schema review and tests.
 
 Design document: `docs/OBSERVATION-PERSISTENCE-DESIGN.md`. No migration was created or applied. **Job 9 remains in progress; design is committed, implementation and DB verification are not complete.**
+
+
+### Job 8 progress — ingestion reliability and idempotency (2026-11-20)
+
+- [x] Consolidate scanner and BBot fact persistence on one exact-replay deduplication path.
+- [x] Apply the same deduplication rule to BBot third-party intelligence facts; repeated ingestion of the same source, summary and detail is counted as existing rather than appended again.
+- [x] Preserve distinct facts when their source, summary or detail differs; this avoids silently overwriting differing observations.
+- [x] Add a PostgreSQL-backed BBot replay assertion for zero new facts and the expected existing count.
+- [~] Existing asset upserts remain idempotent through the asset store; scanner and BBot parsers already bound file/line sizes and preserve complete records from supported partial/truncated inputs.
+- [ ] Add database-enforced, concurrency-safe idempotency (the current shared helper checks the exploration graph before writing and is not an atomic uniqueness guarantee under concurrent ingesters).
+- [ ] Verify last-seen and source-lineage update semantics without erasing contradictory source claims; complete observation-claim persistence remains gated by Job 9.
+- [ ] Execute parser and PostgreSQL integration tests, including malformed, oversized, truncated, replayed and conflicting fixtures. No tests were run for this commit.
+- [ ] Add end-to-end partial-failure and cancellation/retry tests, then reconcile result counters with actual persisted outcomes.
+
+**Job 8 is in progress, not complete.** The change closes the BBot replay gap, but the graph-level check-then-insert is not concurrency-safe and the provenance/claim layer is not yet durable.
