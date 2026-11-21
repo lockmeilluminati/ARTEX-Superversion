@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -292,5 +293,82 @@ func TestNodesPageQueryMatchesID(t *testing.T) {
 		t.Fatal(err)
 	} else if total != 0 || len(nodes) != 0 {
 		t.Fatalf("non-existent id: total=%d nodes=%+v, want empty", total, nodes)
+	}
+}
+
+
+func TestAddFactIfAbsentConcurrentReplay(t *testing.T) {
+	d, err := Open(testDSN(t))
+	if err != nil {
+		SkipPGUnavailable(t, err)
+	}
+	defer d.Close()
+
+	expID, err := d.CreateExploration("test", "concurrent exact fact replay")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Exec(`DELETE FROM explorations WHERE id=$1`, expID)
+
+	const workers = 12
+	type result struct {
+		id       int64
+		inserted bool
+		err      error
+	}
+	results := make(chan result, workers)
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			id, inserted, err := d.Exploration(expID).AddFactIfAbsent(
+				map[string]any{"summary": "same scanner result", "source": "tool_output"},
+				5, "confirmed", "parallel-worker", nil,
+			)
+			results <- result{id: id, inserted: inserted, err: err}
+		}()
+	}
+	wg.Wait()
+	close(results)
+
+	var canonicalID int64
+	insertedCount := 0
+	for got := range results {
+		if got.err != nil {
+			t.Fatalf("concurrent insert: %v", got.err)
+		}
+		if got.id <= 0 {
+			t.Fatalf("invalid fact id: %d", got.id)
+		}
+		if canonicalID == 0 {
+			canonicalID = got.id
+		} else if got.id != canonicalID {
+			t.Fatalf("replay returned different fact IDs: %d and %d", canonicalID, got.id)
+		}
+		if got.inserted {
+			insertedCount++
+		}
+	}
+	if insertedCount != 1 {
+		t.Fatalf("want exactly one insert, got %d", insertedCount)
+	}
+
+	var count int
+	if err := d.QueryRow(`SELECT COUNT(*) FROM exploration_nodes WHERE exploration_id=$1 AND kind=$2 AND payload=$3::jsonb`,
+		expID, KindFact, `{"summary":"same scanner result","source":"tool_output"}`).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatalf("want one persisted exact fact, got %d", count)
+	}
+
+	// A changed detail is a distinct observation and must not be collapsed.
+	otherID, inserted, err := d.Exploration(expID).AddFactIfAbsent(
+		map[string]any{"summary": "same scanner result", "source": "tool_output", "detail": "different evidence"},
+		5, "confirmed", "parallel-worker", nil,
+	)
+	if err != nil || !inserted || otherID == canonicalID {
+		t.Fatalf("distinct payload should insert separately: id=%d inserted=%v err=%v", otherID, inserted, err)
 	}
 }
