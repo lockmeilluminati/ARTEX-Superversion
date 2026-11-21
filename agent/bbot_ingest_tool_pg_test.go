@@ -68,6 +68,7 @@ func TestIngestBbotScopeSplit(t *testing.T) {
 			Errors  []map[string]any `json:"errors"`
 		} `json:"assets"`
 		IntelFacts      int `json:"intel_facts"`
+		IntelFactsExisting int `json:"intel_facts_existing"`
 		InScopeNotAsset int `json:"in_scope_not_asset"`
 		SkippedLines    int `json:"skipped_lines"`
 		OversizedLines  int `json:"oversized_lines"`
@@ -149,5 +150,30 @@ func TestIngestBbotScopeSplit(t *testing.T) {
 	if len(out.Assets.Results) != 1 || len(out.Assets.Errors) != 0 || out.IntelFacts != 3 ||
 		out.InScopeNotAsset != 1 || out.SkippedLines != 1 || out.OversizedLines != 0 {
 		t.Fatalf("result = %s; want 1 asset, 3 intel facts, 1 in-scope non-asset, 1 skipped line", res.Flatten())
+	}
+
+	// Exact replay of the same BBot file must not append duplicate intel facts.
+	res, err = tsx.ingestBbot().Call(context.Background(), input, &actool.ToolContext{WorkingDir: runDir})
+	if err != nil || res.IsError {
+		t.Fatalf("replay ingest_bbot: %v %s", err, res.Flatten())
+	}
+	if err := json.Unmarshal([]byte(res.Flatten()), &out); err != nil {
+		t.Fatalf("replay result %q: %v", res.Flatten(), err)
+	}
+	if out.IntelFacts != 0 || out.IntelFactsExisting != 3 {
+		t.Fatalf("replay fact counts = written %d existing %d; want 0 and 3", out.IntelFacts, out.IntelFactsExisting)
+	}
+	all, err = store.ListByKind(db.KindFact, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	factCount := 0
+	for _, n := range all {
+		if n.Origin == "worker-1" {
+			factCount++
+		}
+	}
+	if factCount != 3 {
+		t.Fatalf("replay created duplicate facts: got %d, want 3", factCount)
 	}
 }
