@@ -17,7 +17,7 @@ evidence, authorization, and human oversight at the center.
 [![Go](https://img.shields.io/github/go-mod/go-version/lockmeilluminati/ARTEX-Superversion?color=6b34db)](go.mod)
 [![Based on BaaRai ARTEX](https://img.shields.io/badge/base-BaaRai%20ARTEX-6b34db)](https://github.com/BaaRai/ARTEX)
 
-[Vision](#the-vision) · [Roadmap](#the-roadmap) · [Architecture](#planned-ecosystem-architecture) · [Quick start](#quick-start) · [Security](#security) · [Contributing](#contributing)
+[Vision](#the-vision) · [Roadmap](#the-roadmap) · [Architecture](#planned-ecosystem-architecture) · [Quick start](#quick-start) · [Parrot OS](docs/PARROT-OS.md) · [Security](#security) · [Contributing](#contributing)
 
 
 </div>
@@ -173,11 +173,21 @@ Our additions will be documented separately in the changelog, and meaningful cha
 
 ---
 
+## Parrot Security OS
+
+ARTEX-Superversion includes a deployment guide for **Parrot Security OS**, with Debian-based host preparation, Docker Compose v2 setup, local configuration, safe startup/shutdown, and notes for Podman users.
+
+**[Read the Parrot Security OS installation guide →](docs/PARROT-OS.md)**
+
+The default deployment binds the web interface to `127.0.0.1`, keeping it local to the Parrot machine. The guide distinguishes the documented Docker Compose path from provider-dependent Podman compatibility.
+
+---
+
 ## Quick start
 
 ```bash
-git clone https://github.com/BaaRai/ARTEX.git
-cd ARTEX
+git clone https://github.com/lockmeilluminati/ARTEX-Superversion.git
+cd ARTEX-Superversion
 cp .env.example .env            # set POSTGRES_PASSWORD (and optionally an LLM key)
 docker compose up -d --build    # builds from this checkout, starts PostgreSQL
 ```
